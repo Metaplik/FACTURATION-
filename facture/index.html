@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Facture</title>
+<style>
+* { box-sizing: border-box; }
+body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 10px 10px 100px; }
+.upload-btn { margin-bottom: 10px; }
+.top { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.left-col { flex: 1; min-width: 220px; }
+.right-col { text-align: right; flex: 1; min-width: 260px; }
+.logo-box { width: 220px; height: 100px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+.logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.auto-ta { width: 100%; border: none; border-bottom: 1px solid #eee; resize: none; overflow: hidden; font-family: Arial, sans-serif; font-size: 14px; background: transparent; padding: 2px 0; display: block; min-height: 26px; line-height: 1.4; }
+.auto-ta:focus { outline: none; border-bottom-color: #aaa; }
+.big-title input { font-size: 28px; font-weight: bold; text-align: right; border: none; border-bottom: 1px solid #eee; background: transparent; width: 100%; }
+.big-title input:focus { outline: none; }
+.meta-line { margin: 4px 0; font-size: 14px; }
+.meta-line input { border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 14px; font-family: Arial; }
+.meta-line input:focus { outline: none; }
+.client-box { margin-top: 20px; text-align: right; }
+.client-box input { text-align: right; border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 14px; font-family: Arial; width: 100%; }
+.client-box input:focus { outline: none; }
+.section { margin-top: 24px; }
+.section input { border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 14px; font-family: Arial; width: 100%; }
+.section input:focus { outline: none; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+th { background: #eee; font-size: 13px; }
+td, th { border: 1px solid #ccc; padding: 5px; text-align: center; vertical-align: top; }
+td:nth-child(1), th:nth-child(1) { width: 36%; text-align: left; }
+td:nth-child(2), th:nth-child(2) { width: 13%; }
+td:nth-child(3), th:nth-child(3) { width: 6%; }
+td:nth-child(4), th:nth-child(4) { width: 7%; }
+td:nth-child(5), th:nth-child(5) { width: 11%; }
+td:nth-child(6), th:nth-child(6) { width: 8%; }
+td:nth-child(7), th:nth-child(7) { width: 19%; }
+td input, td textarea { width: 100%; border: none; background: transparent; font-size: 13px; font-family: Arial; resize: none; overflow: hidden; padding: 0; }
+td input:focus, td textarea:focus { outline: none; }
+.desc-ta { min-height: 24px; line-height: 1.4; display: block; }
+.total-box { text-align: right; margin-top: 16px; font-size: 14px; line-height: 2; }
+.btn-add { margin-top: 8px; background: #eee; border: 1px solid #ccc; padding: 6px 14px; cursor: pointer; border-radius: 4px; font-size: 14px; }
+.btn-add:hover { background: #ddd; }
+hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
+.btns-fixed { position: fixed; bottom: 10px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 10px; }
+.btns-fixed button { background: #555; color: #fff; border: none; padding: 11px 18px; cursor: pointer; border-radius: 4px; font-size: 13px; }
+.btns-fixed button:hover { background: #333; }
+.btn-pdf { background: #1a6dc4 !important; }
+.btn-pdf:hover { background: #144f96 !important; }
+ 
+@media print {
+@page { size: A4 portrait; margin: 15mm; }
+.btns-fixed, .upload-btn, .btn-add { display: none !important; }
+body { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+#app { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+input, textarea { border-bottom: none !important; }
+table { page-break-inside: avoid; table-layout: fixed; width: 100%; }
+td:nth-child(1), th:nth-child(1) { width: 32% !important; }
+td:nth-child(2), th:nth-child(2) { width: 15% !important; }
+td:nth-child(3), th:nth-child(3) { width: 5% !important; }
+td:nth-child(4), th:nth-child(4) { width: 6% !important; }
+td:nth-child(5), th:nth-child(5) { width: 10% !important; }
+td:nth-child(6), th:nth-child(6) { width: 7% !important; }
+td:nth-child(7), th:nth-child(7) { width: 25% !important; }
+td:nth-child(2) input { font-size: 10px !important; white-space: nowrap; }
+}
+</style>
+</head>
+<body>
+ 
+<input class="upload-btn" type="file" accept="image/*" onchange="loadLogo(event)">
+ 
+<div id="app">
+<div class="top">
+<div class="left-col">
+<div class="logo-box">
+<img id="logo" src="" style="display:none">
+<span id="logo-placeholder" style="color:#aaa;font-size:13px">Logo</span>
+</div>
+<textarea class="auto-ta" placeholder="Nom entreprise" oninput="grow(this)"></textarea>
+<textarea class="auto-ta" id="emailEntreprise" placeholder="Email entreprise" oninput="grow(this)"></textarea>
+<textarea class="auto-ta" placeholder="Adresse entreprise" oninput="grow(this)"></textarea>
+</div>
+ 
+<div class="right-col">
+<div class="big-title">
+<input value="FACTURE">
+</div>
+<div class="meta-line">Numéro : <input value="2026-1" style="width:140px"></div>
+<div class="meta-line">Date : <input type="date" style="width:150px"></div>
+<div class="meta-line">Type : <input value="Prestation de service" style="width:200px"></div>
+ 
+<div class="client-box">
+<b>Client :</b>
+<textarea class="auto-ta" placeholder="Nom Prénom" oninput="grow(this)" style="text-align:right"></textarea>
+<textarea class="auto-ta" placeholder="Adresse + Code postal" oninput="grow(this)" style="text-align:right"></textarea>
+<input placeholder="Téléphone" style="text-align:right">
+<input id="emailClient" placeholder="Email client" style="text-align:right">
+</div>
+</div>
+</div>
+ 
+<div class="section">
+<b>Facturation :</b>
+<input placeholder="Ex: Débouchage">
+</div>
+ 
+<table id="table">
+<tr>
+<th>Description</th>
+<th>Date</th>
+<th>Qté</th>
+<th>Unité</th>
+<th>Prix</th>
+<th>TVA %</th>
+<th>Montant</th>
+</tr>
+<tr>
+<td><textarea class="desc-ta auto-ta" placeholder="Description prestation" oninput="grow(this); calc()"></textarea></td>
+<td><input type="date"></td>
+<td><input type="number" value="1" oninput="calc()"></td>
+<td><input value="h"></td>
+<td><input type="number" value="0" oninput="calc()"></td>
+<td><input type="number" value="20" oninput="calc()"></td>
+<td class="montant">0,00 €</td>
+</tr>
+</table>
+ 
+<button class="btn-add" onclick="addRow()">+ Ajouter une ligne</button>
+ 
+<div class="total-box">
+Total HT : <span id="ht">0,00</span> €<br>
+TVA : <span id="tva">0,00</span> €<br>
+<b>Total TTC : <span id="ttc">0,00</span> €</b>
+</div>
+ 
+<hr>
+ 
+<div class="section">
+<b>Conditions de paiement :</b><br>
+<input value="14 jours"><br><br>
+<b>Code service :</b><br>
+<input value="Résidence">
+</div>
+</div>
+ 
+<div class="btns-fixed">
+<button onclick="envoyerEntreprise()">Envoyer entreprise</button>
+<button class="btn-pdf" onclick="window.print()">⬇ Télécharger PDF (A4)</button>
+<button onclick="envoyerClient()">Envoyer client</button>
+</div>
+ 
+<script>
+function loadLogo(e) {
+const img = document.getElementById('logo');
+const ph = document.getElementById('logo-placeholder');
+img.src = URL.createObjectURL(e.target.files[0]);
+img.style.display = 'block';
+ph.style.display = 'none';
+}
+ 
+function grow(el) {
+el.style.height = 'auto';
+el.style.height = el.scrollHeight + 'px';
+}
+ 
+function addRow() {
+const table = document.getElementById('table');
+const tr = document.createElement('tr');
+tr.innerHTML = `
+<td><textarea class="desc-ta auto-ta" placeholder="Description prestation" oninput="grow(this); calc()"></textarea></td>
+<td><input type="date"></td>
+<td><input type="number" value="1" oninput="calc()"></td>
+<td><input value="h"></td>
+<td><input type="number" value="0" oninput="calc()"></td>
+<td><input type="number" value="20" oninput="calc()"></td>
+<td class="montant">0,00 €</td>
+`;
+table.appendChild(tr);
+}
+ 
+function fmt(n) {
+return n.toFixed(2).replace('.', ',');
+}
+ 
+function calc() {
+const rows = document.querySelectorAll('#table tr');
+let totalHT = 0, totalTVA = 0;
+rows.forEach((row, i) => {
+if (i === 0) return;
+const qte = parseFloat(row.cells[2].querySelector('input').value) || 0;
+const prix = parseFloat(row.cells[4].querySelector('input').value) || 0;
+const tva = parseFloat(row.cells[5].querySelector('input').value) || 0;
+const ht = qte * prix;
+const tvaAmt = ht * tva / 100;
+row.cells[6].innerText = fmt(ht + tvaAmt) + ' \u20ac';
+totalHT += ht;
+totalTVA += tvaAmt;
+});
+document.getElementById('ht').innerText = fmt(totalHT);
+document.getElementById('tva').innerText = fmt(totalTVA);
+document.getElementById('ttc').innerText = fmt(totalHT + totalTVA);
+}
+ 
+function envoyerEntreprise() {
+const email = document.getElementById('emailEntreprise').value.trim();
+window.location.href = 'mailto:' + email;
+}
+function envoyerClient() {
+const email = document.getElementById('emailClient').value.trim();
+window.location.href = 'mailto:' + email;
+}
+ 
+calc();
+
+// AUTO-IMPORT depuis ?data= (panier Cedeo)
+(function() {
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get('data');
+    if (!data) return;
+
+    let panier;
+    try { panier = JSON.parse(decodeURIComponent(data)); } catch(e) { return; }
+    if (!Array.isArray(panier) || panier.length === 0) return;
+
+    const table = document.getElementById('table');
+
+    // Vider les lignes existantes sauf l'en-tête
+    while (table.rows.length > 1) table.deleteRow(1);
+
+    panier.forEach(function(art) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+<td><textarea class="desc-ta auto-ta" oninput="grow(this); calc()">${art.des || ''}${art.ref ? ' (Réf: ' + art.ref + ')' : ''}</textarea></td>
+<td><input type="date"></td>
+<td><input type="number" value="${art.qte || 1}" oninput="calc()"></td>
+<td><input value="u"></td>
+<td><input type="number" value="${art.px || 0}" oninput="calc()"></td>
+<td><input type="number" value="20" oninput="calc()"></td>
+<td class="montant">0,00 €</td>`;
+        table.appendChild(tr);
+    });
+
+    // Charger logo + profil depuis localStorage (enregistré dans Centralisateur Pro)
+    const nom = localStorage.getItem('artisan_nom');
+    const email = localStorage.getItem('artisan_contact');
+    const logo = localStorage.getItem('artisan_logo');
+
+    if (nom) {
+        const tas = document.querySelectorAll('.left-col .auto-ta');
+        if (tas[0]) { tas[0].value = nom; grow(tas[0]); }
+    }
+    if (email) {
+        const emailEl = document.getElementById('emailEntreprise');
+        if (emailEl) { emailEl.value = email; grow(emailEl); }
+    }
+    if (logo) {
+        const img = document.getElementById('logo');
+        const ph = document.getElementById('logo-placeholder');
+        img.src = logo;
+        img.style.display = 'block';
+        if (ph) ph.style.display = 'none';
+    }
+
+    calc();
+    window.history.replaceState({}, document.title, window.location.pathname);
+})();
+
+</script>
+ 
+</body>
+</html>
