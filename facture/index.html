@@ -241,10 +241,11 @@ calc();
         table.appendChild(tr);
     });
 
-    // Charger logo + profil depuis localStorage (enregistré dans Centralisateur Pro)
+       // Charger logo + profil depuis localStorage (enregistré dans Centralisateur Pro)
     const nom = localStorage.getItem('artisan_nom');
     const email = localStorage.getItem('artisan_contact');
     const logo = localStorage.getItem('artisan_logo');
+    const adresse = localStorage.getItem('artisan-adresse-postale') || localStorage.getItem('artisan_adresse');
 
     if (nom) {
         const tas = document.querySelectorAll('.left-col .auto-ta');
@@ -253,6 +254,10 @@ calc();
     if (email) {
         const emailEl = document.getElementById('emailEntreprise');
         if (emailEl) { emailEl.value = email; grow(emailEl); }
+    }
+    if (adresse) {
+        const tas = document.querySelectorAll('.left-col .auto-ta');
+        if (tas[2]) { tas[2].value = adresse; grow(tas[2]); }
     }
     if (logo) {
         const img = document.getElementById('logo');
