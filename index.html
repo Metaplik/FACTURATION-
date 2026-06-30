@@ -103,7 +103,7 @@
 
         <div class="form-group">
             <label>Adresse postale</label>
-            <input type="text" id="artisan-adresse" placeholder="Adresse postale">
+            <textarea id="artisan-adresse" placeholder="Adresse postale" rows="2" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--primary);background:#F8FAFC;font-family:inherit;resize:vertical;"></textarea>
         </div>
 
         <button type="button" class="btn-submit" onclick="sauvegarderProfil()">Enregistrer mon profil</button>
@@ -205,7 +205,56 @@
             return;
         }
         localStorage.setItem('fournisseur_actif', fournisseur);
-        window.location.href = url;
+
+        if (fournisseur === 'cedeo') {
+            const win = window.open(url, '_blank');
+            if (win) {
+                win.addEventListener('load', function() {
+                    const script = win.document.createElement('script');
+                    script.textContent = `
+                        (function() {
+                            if (window.observerCedeo) return;
+                            function injecterBouton() {
+                                if (document.getElementById('btn-transfert-unique')) return;
+                                const b = document.createElement('button');
+                                b.id = 'btn-transfert-unique';
+                                b.innerText = '\\uD83D\\uDE80 COPIER VERS FACTURE';
+                                b.style = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999999;background:#002F6C;color:white;padding:16px 24px;border:none;border-radius:50px;font-weight:bold;font-size:16px;box-shadow:0 4px 15px rgba(0,0,0,0.4);width:90%;max-width:350px;cursor:pointer;';
+                                b.onclick = function() {
+                                    const lignes = document.querySelectorAll('li[data-testid^="cart/article/"]');
+                                    const panier = [];
+                                    lignes.forEach(l => {
+                                        const info = l.querySelector('.area-article-tile-info');
+                                        const des = info ? info.querySelector('a')?.innerText.trim() : 'Article';
+                                        const id = l.getAttribute('data-testid');
+                                        const ref = id ? id.split('/').pop() : '';
+                                        const prixB = l.querySelector('.area-article-tile-price');
+                                        let px = 0;
+                                        if (prixB) { const m = prixB.innerText.match(/([0-9\\s\\u00a0,.]+)/); if (m) px = parseFloat(m[1].replace(/\\s/g,'').replace(',','.')); }
+                                        const inp = l.querySelector('input[type="number"]') || l.querySelector('input');
+                                        const qte = inp ? parseInt(inp.value, 10) : 1;
+                                        panier.push({des, ref, px, qte});
+                                    });
+                                    if (panier.length > 0) {
+                                        const data = encodeURIComponent(JSON.stringify(panier));
+                                        window.open('https://metaplik.github.io/FACTURATION-/facture/?data=' + data, '_blank');
+                                    } else {
+                                        alert('Ton panier Cedeo semble vide.');
+                                    }
+                                };
+                                document.body.appendChild(b);
+                            }
+                            injecterBouton();
+                            window.observerCedeo = new MutationObserver(injecterBouton);
+                            window.observerCedeo.observe(document.body, {childList:true, subtree:true});
+                        })();
+                    `;
+                    win.document.head.appendChild(script);
+                });
+            }
+        } else {
+            window.location.href = url;
+        }
     }
 </script>
 </body>
