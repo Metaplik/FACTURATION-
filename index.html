@@ -3,154 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centralisateur Pro</title>
+    <title>Centralisateur Application</title>
     <style>
-        :root {
-            --primary: #0F172A;
-            --accent: #2563EB;
-            --bg: #F8FAFC;
-            --border: #E2E8F0;
-            --text: #334155;
-            --success: #10B981;
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: var(--bg); color: var(--text); padding: 16px; }
-        .container { max-width: 600px; margin: 0 auto; }
-        
-        header { margin: 24px 0; text-align: center; }
-        h1 { font-size: 24px; color: var(--primary); font-weight: 700; }
-        p { color: #64748B; font-size: 14px; margin-top: 4px; }
-        h2 { font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 12px; margin-top: 24px; text-transform: uppercase; }
-
-        /* Grille Liens */
-        .grid-fournisseurs { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        .card-fournisseur { background: white; padding: 16px; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); cursor: pointer; height: 80px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .card-fournisseur:active { transform: scale(0.98); background: #F1F5F9; }
-        .card-fournisseur img { max-height: 50px; max-width: 90%; object-fit: contain; display: block; }
-
-        /* Panneau Formulaire */
-        .panel { background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-        .form-group { margin-bottom: 16px; }
-        label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #475569; }
-        input { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--primary); background: #F8FAFC; }
-        input:focus { outline: none; border-color: var(--accent); background: white; }
-        
-        /* Zone Logo - Strictement identique à la Facture (220x100) */
-        .logo-preview-box { width: 220px; height: 100px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-top: 10px; background: #fff; }
-        .logo-preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        
-        .file-wrapper { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
-        .btn-file { width: fit-content; background: #EDF2F7; color: #4A5568; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #CBD5E0; text-align: center; }
-
-        .btn-submit { width: 100%; background: var(--success); color: white; padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
-        .btn-submit:active { background: #059669; }
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        h1 {
+            text-align: center;
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #00bcd4;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background: #2a2a2a;
+            color: #fff;
+            box-sizing: border-box;
+        }
+        input[type="file"] {
+            margin-top: 10px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+        .btn-success {
+            background-color: #2e7d32;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #1b5e20;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .preview-box {
+            margin-top: 15px;
+            text-align: center;
+            border: 2px dashed #444;
+            padding: 10px;
+            border-radius: 4px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .preview-box img {
+            max-width: 100%;
+            max-height: 120px;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <header>
-        <h1>Centralisateur Pro</h1>
-        <p>Configurez vos infos une bonne fois pour toutes</p>
-    </header>
+    <h1>Configuration Artisan</h1>
 
-    <div class="panel">
-        <h2>1. Profil de l'entreprise</h2>
-        
-        <div class="form-group">
-            <label>Nom de l'entreprise</label>
-            <input type="text" id="artisan-nom" placeholder="Nom de l'entreprise">
-        </div>
+    <!-- Champ 1 : Nom de l'entreprise -->
+    <label for="artisan-nom">Nom de l'entreprise :</label>
+    <input type="text" id="artisan-nom" placeholder="Ex: Francilienne du dépannage">
 
-        <div class="form-group">
-            <label>Adresse E-mail de l'entreprise</label>
-            <input type="email" id="artisan-contact" placeholder="Email de l'entreprise">
-        </div>
+    <!-- Champ 2 : Adresse Email -->
+    <label for="artisan-email">Adresse Email :</label>
+    <input type="email" id="artisan-email" placeholder="Ex: contact@entreprise.fr">
 
-        <div class="form-group">
-            <label>Adresse de l'entreprise</label>
-            <input type="text" id="artisan-adresse" placeholder="Adresse complète">
-        </div>
-        
-        <div class="form-group">
-            <label>Logo de l'entreprise</label>
-            <div class="file-wrapper">
-                <label for="artisan-logo" class="btn-file">Télécharger le logo</label>
-                <input type="file" id="artisan-logo" accept="image/*" style="display: none;" onchange="apercuEtConvertirLogo(this)">
-                
-                <!-- Carré de prévisualisation identique à la facture -->
-                <div class="logo-preview-box">
-                    <img id="logo-preview" src="" style="display:none">
-                    <span id="logo-placeholder" style="color:#aaa;font-size:13px">Pas de logo</span>
-                </div>
-            </div>
-        </div>
+    <!-- Champ 3 : Adresse de l'entreprise -->
+    <label for="artisan-adresse">Adresse de l'entreprise :</label>
+    <input type="text" id="artisan-adresse" placeholder="Ex: 12 Rue de la Paix, Paris">
 
-        <button type="button" class="btn-submit" onclick="sauvegarderProfil()">Enregistrer et mémoriser</button>
+    <!-- Section Logo -->
+    <label>Logo de l'entreprise :</label>
+    <input type="file" id="logo-file" accept="image/*">
+    
+    <div class="preview-box" id="preview-container">
+        <span id="preview-text" style="color: #888;">Aucun logo sélectionné</span>
+        <img id="logo-preview" src="" alt="Aperçu du logo" style="display: none;">
     </div>
 
-    <h2>2. Plateformes Fournisseurs</h2>
-    <div class="grid-fournisseurs" style="margin-top: 12px; margin-bottom: 40px;">
-        <div class="card-fournisseur" onclick="window.open('https://www.cedeo.fr/', '_blank')">
-            <img src="data:image/jpeg;base64,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 AUX5Zf8HkU7xfsP8 house/" alt="CEDEO">
-        </div>
-    </div>
+    <!-- Boutons d'action -->
+    <button class="btn btn-success" id="btn-save">Enregistrer et mémoriser</button>
+    
+    <a href="./facture/index.html" class="btn btn-primary" style="margin-top: 10px;">Accéder à la Facturation</a>
 </div>
 
 <script>
-let logoBase64 = "";
+    const nomInput = document.getElementById('artisan-nom');
+    const emailInput = document.getElementById('artisan-email');
+    const adresseInput = document.getElementById('artisan-adresse');
+    const fileInput = document.getElementById('logo-file');
+    const saveBtn = document.getElementById('btn-save');
+    const logoPreview = document.getElementById('logo-preview');
+    const previewText = document.getElementById('preview-text');
 
-// Au chargement : on remet TOUT ce qui est en mémoire
-window.onload = function() {
-    if(localStorage.getItem('artisan_nom')) document.getElementById('artisan-nom').value = localStorage.getItem('artisan_nom');
-    if(localStorage.getItem('artisan_contact')) document.getElementById('artisan-contact').value = localStorage.getItem('artisan_contact');
-    if(localStorage.getItem('artisan_adresse')) document.getElementById('artisan-adresse').value = localStorage.getItem('artisan_adresse');
-    
-    // Récupérer et afficher le logo sauvegardé
-    const savedLogo = localStorage.getItem('artisan_logo');
-    if(savedLogo) {
-        logoBase64 = savedLogo;
-        const img = document.getElementById('logo-preview');
-        const ph = document.getElementById('logo-placeholder');
-        img.src = savedLogo;
-        img.style.display = 'block';
-        if(ph) ph.style.display = 'none';
-    }
-}
+    let base64Logo = "";
 
-// Convertit l'image en Base64 pour qu'elle reste enregistrée à vie
-function apercuEtConvertirLogo(input) {
-    const img = document.getElementById('logo-preview');
-    const ph = document.getElementById('logo-placeholder');
-    
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            logoBase64 = e.target.result;
-            img.src = logoBase64;
-            img.style.display = 'block';
-            if(ph) ph.style.display = 'none';
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
+    // Charger les données stockées au démarrage
+    window.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('artisan_nom')) {
+            nomInput.value = localStorage.getItem('artisan_nom');
+        }
+        if (localStorage.getItem('artisan_email')) {
+            emailInput.value = localStorage.getItem('artisan_email');
+        }
+        if (localStorage.getItem('artisan_adresse')) {
+            adresseInput.value = localStorage.getItem('artisan_adresse');
+        }
+        if (localStorage.getItem('artisan_logo')) {
+            base64Logo = localStorage.getItem('artisan_logo');
+            logoPreview.src = base64Logo;
+            logoPreview.style.display = 'block';
+            previewText.style.display = 'none';
+        }
+    });
 
-// Enregistre définitivement dans la mémoire locale
-function sauvegarderProfil() {
-    const nom = document.getElementById('artisan-nom').value.trim();
-    const contact = document.getElementById('artisan-contact').value.trim();
-    const adresse = document.getElementById('artisan-adresse').value.trim();
+    // Traitement du fichier image vers Base64
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                base64Logo = event.target.result;
+                logoPreview.src = base64Logo;
+                logoPreview.style.display = 'block';
+                previewText.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
 
-    localStorage.setItem('artisan_nom', nom);
-    localStorage.setItem('artisan_contact', contact);
-    localStorage.setItem('artisan_adresse', adresse);
-    
-    if(logoBase64) {
-        localStorage.setItem('artisan_logo', logoBase64);
-    }
-
-    alert("Données enregistrées ! Le circuit est prêt.");
-}
+    // Sauvegarde dans le localStorage
+    saveBtn.addEventListener('click', () => {
+        localStorage.setItem('artisan_nom', nomInput.value);
+        localStorage.setItem('artisan_email', emailInput.value);
+        localStorage.setItem('artisan_adresse', adresseInput.value);
+        if (base64Logo) {
+            localStorage.setItem('artisan_logo', base64Logo);
+        }
+        alert('Informations enregistrées avec succès !');
+    });
 </script>
 
 </body>
