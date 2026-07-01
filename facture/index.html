@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Facture</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 * { box-sizing: border-box; }
 body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 10px 10px 100px; }
@@ -13,30 +12,21 @@ body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 
 .right-col { text-align: right; flex: 1; min-width: 260px; }
 .logo-box { width: 220px; height: 100px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
 .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-
 .auto-ta { width: 100%; border: none; border-bottom: 1px solid #eee; resize: none; overflow: hidden; font-family: Arial, sans-serif; font-size: 14px; background: transparent; padding: 2px 0; display: block; min-height: 26px; line-height: 1.4; }
 .auto-ta:focus { outline: none; border-bottom-color: #aaa; }
-
-.info-row { display: flex; align-items: baseline; gap: 4px; margin-bottom: 2px; }
-.info-label { font-size: 12px; color: #666; white-space: nowrap; }
-.info-line { flex: 1; border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 13px; font-family: Arial, sans-serif; padding: 2px 0; min-width: 0; }
+.info-line { width: 100%; border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 13px; font-family: Arial, sans-serif; padding: 3px 0; margin-bottom: 2px; display: block; }
 .info-line:focus { outline: none; border-bottom-color: #aaa; }
-
-.big-title input { font-size: 28px; font-weight: bold; text-align: right; border: none; border-bottom: 1px solid #eee; background: transparent; width: 100%; color: #001f54; }
+.big-title input { font-size: 28px; font-weight: bold; text-align: right; border: none; border-bottom: 1px solid #eee; background: transparent; width: 100%; color: navy; }
 .big-title input:focus { outline: none; }
-
 .meta-line { margin: 4px 0; font-size: 14px; }
 .meta-line input { border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 14px; font-family: Arial; }
 .meta-line input:focus { outline: none; }
-
 .client-box { margin-top: 20px; text-align: right; }
 .client-box input { text-align: right; border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 14px; font-family: Arial; width: 100%; }
 .client-box input:focus { outline: none; }
-
 .section { margin-top: 24px; }
 .section input { border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 14px; font-family: Arial; width: 100%; }
 .section input:focus { outline: none; }
-
 table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
 th { background: #eee; font-size: 13px; }
 td, th { border: 1px solid #ccc; padding: 5px; text-align: center; vertical-align: top; }
@@ -50,67 +40,35 @@ td:nth-child(7), th:nth-child(7) { width: 19%; }
 td input, td textarea { width: 100%; border: none; background: transparent; font-size: 13px; font-family: Arial; resize: none; overflow: hidden; padding: 0; }
 td input:focus, td textarea:focus { outline: none; }
 .desc-ta { min-height: 24px; line-height: 1.4; display: block; }
-
 #dateGlobale { width: 100%; font-size: 11px; border: 1px solid #ccc; border-radius: 3px; background: #fff; padding: 1px 2px; margin-top: 3px; }
 #dateGlobale:focus { outline: none; border-color: #888; }
 .date-affichee { display: inline-block; min-height: 16px; font-size: 13px; }
-
 .total-box { text-align: right; margin-top: 16px; font-size: 14px; line-height: 2; }
-.total-box .total-ttc { color: #c00000; font-size: 16px; }
-
+.total-box b { color: #d32f2f; }
 .btn-add { margin-top: 8px; background: #eee; border: 1px solid #ccc; padding: 6px 14px; cursor: pointer; border-radius: 4px; font-size: 14px; }
 .btn-add:hover { background: #ddd; }
-
 hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
-
-.btns-fixed { position: fixed; bottom: 10px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 10px; gap: 8px; }
-.btns-fixed button { flex: 1; background: #555; color: #fff; border: none; padding: 11px 8px; cursor: pointer; border-radius: 4px; font-size: 13px; }
+.btns-fixed { position: fixed; bottom: 10px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 10px; }
+.btns-fixed button { background: #555; color: #fff; border: none; padding: 11px 18px; cursor: pointer; border-radius: 4px; font-size: 13px; }
 .btns-fixed button:hover { background: #333; }
 .btn-pdf { background: #1a6dc4 !important; }
 .btn-pdf:hover { background: #144f96 !important; }
 
-/* ---- Rendu propre pendant la capture PDF (html2pdf) ---- */
-.pdf-render .auto-ta,
-.pdf-render .info-line,
-.pdf-render .meta-line input,
-.pdf-render .client-box input,
-.pdf-render .section input,
-.pdf-render .big-title input,
-.pdf-render td input,
-.pdf-render td textarea {
-  border-bottom: none !important;
-}
-.pdf-render #dateGlobale { display: none !important; }
-.pdf-render .upload-btn,
-.pdf-render .btn-add,
-.pdf-render .btns-fixed {
-  display: none !important;
-}
-.pdf-render table { page-break-inside: avoid; table-layout: fixed; width: 100%; }
-.pdf-render td:nth-child(1), .pdf-render th:nth-child(1) { width: 32% !important; }
-.pdf-render td:nth-child(2), .pdf-render th:nth-child(2) { width: 15% !important; }
-.pdf-render td:nth-child(3), .pdf-render th:nth-child(3) { width: 5% !important; }
-.pdf-render td:nth-child(4), .pdf-render th:nth-child(4) { width: 6% !important; }
-.pdf-render td:nth-child(5), .pdf-render th:nth-child(5) { width: 10% !important; }
-.pdf-render td:nth-child(6), .pdf-render th:nth-child(6) { width: 7% !important; }
-.pdf-render td:nth-child(7), .pdf-render th:nth-child(7) { width: 25% !important; }
-
+/* CONFIGURATION POUR L'IMPRESSION PROPRE DU TÉLÉPHONE */
 @media print {
-@page { size: A4 portrait; margin: 15mm; }
-.btns-fixed, .upload-btn, .btn-add { display: none !important; }
-body { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
-#app { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
-input, textarea { border-bottom: none !important; }
-#dateGlobale { display: none !important; }
-table { page-break-inside: avoid; table-layout: fixed; width: 100%; }
-td:nth-child(1), th:nth-child(1) { width: 32% !important; }
-td:nth-child(2), th:nth-child(2) { width: 15% !important; }
-td:nth-child(3), th:nth-child(3) { width: 5% !important; }
-td:nth-child(4), th:nth-child(4) { width: 6% !important; }
-td:nth-child(5), th:nth-child(5) { width: 10% !important; }
-td:nth-child(6), th:nth-child(6) { width: 7% !important; }
-td:nth-child(7), th:nth-child(7) { width: 25% !important; }
-td:nth-child(2) input { font-size: 10px !important; white-space: nowrap; }
+    @page { size: A4 portrait; margin: 15mm; }
+    .btns-fixed, .upload-btn, .btn-add { display: none !important; }
+    body { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+    input, textarea { border-bottom: none !important; }
+    #dateGlobale { border: none !important; background: transparent !important; display: none !important; }
+    table { page-break-inside: avoid; table-layout: fixed; width: 100%; }
+    td:nth-child(1), th:nth-child(1) { width: 32% !important; }
+    td:nth-child(2), th:nth-child(2) { width: 15% !important; }
+    td:nth-child(3), th:nth-child(3) { width: 5% !important; }
+    td:nth-child(4), th:nth-child(4) { width: 6% !important; }
+    td:nth-child(5), th:nth-child(5) { width: 10% !important; }
+    td:nth-child(6), th:nth-child(6) { width: 7% !important; }
+    td:nth-child(7), th:nth-child(7) { width: 25% !important; }
 }
 </style>
 </head>
@@ -125,13 +83,10 @@ td:nth-child(2) input { font-size: 10px !important; white-space: nowrap; }
 <img id="logo" src="" style="display:none">
 <span id="logo-placeholder" style="color:#aaa;font-size:13px">Logo</span>
 </div>
-
 <textarea class="auto-ta" id="nomEntreprise" placeholder="Nom entreprise" oninput="grow(this)"></textarea>
-
-<div class="info-row"><span class="info-label">SIRET :</span><input class="info-line" id="siretEntreprise" placeholder="Numéro de SIRET"></div>
-<div class="info-row"><span class="info-label">SIRENE :</span><input class="info-line" id="sireneEntreprise" placeholder="Numéro de SIRENE"></div>
-<div class="info-row"><span class="info-label">TVA :</span><input class="info-line" id="tvaEntreprise" placeholder="N° TVA intracommunautaire"></div>
-
+<input class="info-line" id="siretEntreprise" placeholder="N° SIRET">
+<input class="info-line" id="sireneEntreprise" placeholder="N° SIRENE">
+<input class="info-line" id="tvaEntreprise" placeholder="N° TVA intracommunautaire">
 <textarea class="auto-ta" id="emailEntreprise" placeholder="Email entreprise" oninput="grow(this)"></textarea>
 <textarea class="auto-ta" id="adresseEntreprise" placeholder="Adresse entreprise" oninput="grow(this)"></textarea>
 </div>
@@ -185,7 +140,7 @@ td:nth-child(2) input { font-size: 10px !important; white-space: nowrap; }
 <div class="total-box">
 Total HT : <span id="ht">0,00</span> €<br>
 TVA : <span id="tva">0,00</span> €<br>
-<b class="total-ttc">Total TTC : <span id="ttc">0,00</span> €</b>
+<b>Total TTC : <span id="ttc">0,00</span> €</b>
 </div>
 
 <hr>
@@ -200,28 +155,28 @@ TVA : <span id="tva">0,00</span> €<br>
 
 <div class="btns-fixed">
 <button onclick="envoyerEntreprise()">Envoyer entreprise</button>
-<button class="btn-pdf" onclick="telechargerPDF()">⬇ Télécharger PDF (A4)</button>
+<button class="btn-pdf" onclick="imprimerNatif()">⬇ Imprimer / PDF</button>
 <button onclick="envoyerClient()">Envoyer client</button>
 </div>
 
 <script>
 function loadLogo(e) {
-  const img = document.getElementById('logo');
-  const ph = document.getElementById('logo-placeholder');
-  img.src = URL.createObjectURL(e.target.files[0]);
-  img.style.display = 'block';
-  ph.style.display = 'none';
+const img = document.getElementById('logo');
+const ph = document.getElementById('logo-placeholder');
+img.src = URL.createObjectURL(e.target.files[0]);
+img.style.display = 'block';
+ph.style.display = 'none';
 }
 
 function grow(el) {
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
+el.style.height = 'auto';
+el.style.height = el.scrollHeight + 'px';
 }
 
 function addRow() {
-  const table = document.getElementById('table');
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
+const table = document.getElementById('table');
+const tr = document.createElement('tr');
+tr.innerHTML = `
 <td><textarea class="desc-ta auto-ta" placeholder="Description prestation" oninput="grow(this); calc()"></textarea></td>
 <td class="date-cell"><span class="date-affichee"></span></td>
 <td><input type="number" value="1" oninput="calc()"></td>
@@ -230,138 +185,90 @@ function addRow() {
 <td><input type="number" value="20" oninput="calc()"></td>
 <td class="montant">0,00 €</td>
 `;
-  table.appendChild(tr);
-  appliquerDate();
+table.appendChild(tr);
+appliquerDate();
 }
 
 function fmt(n) {
-  return n.toFixed(2).replace('.', ',');
+return n.toFixed(2).replace('.', ',');
 }
 
 function calc() {
-  const rows = document.querySelectorAll('#table tr');
-  let totalHT = 0, totalTVA = 0;
-  rows.forEach((row, i) => {
-    if (i === 0) return;
-    const qte = parseFloat(row.cells[2].querySelector('input').value) || 0;
-    const prix = parseFloat(row.cells[4].querySelector('input').value) || 0;
-    const tva = parseFloat(row.cells[5].querySelector('input').value) || 0;
-    const ht = qte * prix;
-    const tvaAmt = ht * tva / 100;
-    row.cells[6].innerText = fmt(ht + tvaAmt) + ' \u20ac';
-    totalHT += ht;
-    totalTVA += tvaAmt;
-  });
-  document.getElementById('ht').innerText = fmt(totalHT);
-  document.getElementById('tva').innerText = fmt(totalTVA);
-  document.getElementById('ttc').innerText = fmt(totalHT + totalTVA);
+const rows = document.querySelectorAll('#table tr');
+let totalHT = 0, totalTVA = 0;
+rows.forEach((row, i) => {
+if (i === 0) return;
+const qte = parseFloat(row.cells[2].querySelector('input').value) || 0;
+const prix = parseFloat(row.cells[4].querySelector('input').value) || 0;
+const tva = parseFloat(row.cells[5].querySelector('input').value) || 0;
+const ht = qte * prix;
+const tvaAmt = ht * tva / 100;
+row.cells[6].innerText = fmt(ht + tvaAmt) + ' \u20ac';
+totalHT += ht;
+totalTVA += tvaAmt;
+});
+document.getElementById('ht').innerText = fmt(totalHT);
+document.getElementById('tva').innerText = fmt(totalTVA);
+document.getElementById('ttc').innerText = fmt(totalHT + totalTVA);
 }
 
-/* ---- Date unique dans l'en-tête gris, appliquée à toutes les lignes ---- */
 function formatDateFR(iso) {
-  if (!iso) return '';
-  const p = iso.split('-');
-  if (p.length !== 3) return iso;
-  return p[2] + '/' + p[1] + '/' + p[0];
+if (!iso) return '';
+const p = iso.split('-');
+if (p.length !== 3) return iso;
+return p[2] + '/' + p[1] + '/' + p[0];
 }
 
 function appliquerDate() {
-  const dateInput = document.getElementById('dateGlobale');
-  const formatted = formatDateFR(dateInput ? dateInput.value : '');
-  document.querySelectorAll('.date-affichee').forEach(function(span) {
-    span.textContent = formatted;
-  });
+const dateInput = document.getElementById('dateGlobale');
+const formatted = formatDateFR(dateInput ? dateInput.value : '');
+document.querySelectorAll('.date-affichee').forEach(function(span) {
+span.textContent = formatted;
+});
 }
 
-/* ---- Génération PDF fiable (html2pdf), sans décalage, sans éléments d'édition ---- */
-function genererPDF() {
-  return new Promise(function(resolve, reject) {
-    const app = document.getElementById('app');
-
-    // Remise à zéro du défilement AVANT capture : évite le décalage/texte coupé à gauche
-    window.scrollTo(0, 0);
-
-    app.classList.add('pdf-render');
-
-    const numero = (document.getElementById('numeroFacture').value || 'document').replace(/[\\/:*?"<>|]/g, '-');
-
-    const opt = {
-      margin: [10, 10, 10, 10],
-      filename: 'facture-' + numero + '.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: app.scrollWidth,
-        windowHeight: app.scrollHeight
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'] }
-    };
-
-    // Laisse le temps au navigateur d'appliquer la classe .pdf-render (masquage boutons)
-    setTimeout(function() {
-      html2pdf().set(opt).from(app).save().then(function() {
-        app.classList.remove('pdf-render');
-        resolve();
-      }).catch(function(err) {
-        app.classList.remove('pdf-render');
-        reject(err);
-      });
-    }, 60);
-  });
-}
-
-function telechargerPDF() {
-  genererPDF();
+// LE SYSTÈME NATIF ULTRA-LÉGER ET DIRECT
+function imprimerNatif() {
+    window.print();
 }
 
 function envoyerEntreprise() {
-  const email = document.getElementById('emailEntreprise').value.trim();
-  if (!email) { alert("Veuillez renseigner l'email de l'entreprise."); return; }
-  genererPDF().then(function() {
-    const sujet = encodeURIComponent('Facture');
-    const corps = encodeURIComponent("Bonjour,\n\nLa facture vient d'être téléchargée en PDF, merci de la joindre à cet e-mail avant envoi.\n\nCordialement.");
-    window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corps;
-  });
+const email = document.getElementById('emailEntreprise').value.trim();
+if (!email) { alert("Veuillez renseigner l'email de l'entreprise."); return; }
+const sujet = encodeURIComponent('Facture');
+const corps = encodeURIComponent("Bonjour,\n\nLa facture vient d'être émise. Merci de l'enregistrer.\n\nCordialement.");
+window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corps;
 }
 
 function envoyerClient() {
-  const email = document.getElementById('emailClient').value.trim();
-  if (!email) { alert("Veuillez renseigner l'email du client."); return; }
-  genererPDF().then(function() {
-    const sujet = encodeURIComponent('Facture');
-    const corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver ci-joint votre facture (le PDF vient d'être téléchargé, merci de le joindre à cet e-mail).\n\nCordialement.");
-    window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corps;
-  });
+const email = document.getElementById('emailClient').value.trim();
+if (!email) { alert("Veuillez renseigner l'email du client."); return; }
+const sujet = encodeURIComponent('Facture');
+const corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver ci-joint votre facture.\n\nCordialement.");
+window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corps;
 }
 
 calc();
 appliquerDate();
 
-/* ---- AUTO-IMPORT depuis ?data= (panier fournisseur) + profil entreprise (Centralisateur Pro) ---- */
+// AUTO-IMPORT depuis ?data= (panier fournisseur) + profil entreprise
 (function() {
-  chargerProfilEntreprise();
+chargerProfilEntreprise();
 
-  const params = new URLSearchParams(window.location.search);
-  const data = params.get('data');
-  if (!data) return;
+const params = new URLSearchParams(window.location.search);
+const data = params.get('data');
+if (!data) return;
 
-  let panier;
-  try { panier = JSON.parse(decodeURIComponent(data)); } catch(e) { return; }
-  if (!Array.isArray(panier) || panier.length === 0) return;
+let panier;
+try { panier = JSON.parse(decodeURIComponent(data)); } catch(e) { return; }
+if (!Array.isArray(panier) || panier.length === 0) return;
 
-  const table = document.getElementById('table');
+const table = document.getElementById('table');
+while (table.rows.length > 1) table.deleteRow(1);
 
-  // Vider les lignes existantes sauf l'en-tête
-  while (table.rows.length > 1) table.deleteRow(1);
-
-  panier.forEach(function(art) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
+panier.forEach(function(art) {
+const tr = document.createElement('tr');
+tr.innerHTML = `
 <td><textarea class="desc-ta auto-ta" oninput="grow(this); calc()">${art.des || ''}${art.ref ? ' (Réf: ' + art.ref + ')' : ''}</textarea></td>
 <td class="date-cell"><span class="date-affichee"></span></td>
 <td><input type="number" value="${art.qte || 1}" oninput="calc()"></td>
@@ -369,46 +276,45 @@ appliquerDate();
 <td><input type="number" value="${art.px || 0}" oninput="calc()"></td>
 <td><input type="number" value="20" oninput="calc()"></td>
 <td class="montant">0,00 €</td>`;
-    table.appendChild(tr);
-  });
+table.appendChild(tr);
+});
 
-  appliquerDate();
-  calc();
-  window.history.replaceState({}, document.title, window.location.pathname);
+appliquerDate();
+calc();
+window.history.replaceState({}, document.title, window.location.pathname);
 })();
 
 function chargerProfilEntreprise() {
-  const nom = localStorage.getItem('artisan_nom');
-  const email = localStorage.getItem('artisan_contact');
-  const adresse = localStorage.getItem('artisan-adresse-postale') || localStorage.getItem('artisan_adresse');
-  const siret = localStorage.getItem('artisan_siret');
-  const sirene = localStorage.getItem('artisan_sirene');
-  const tva = localStorage.getItem('artisan_tva');
-  const logo = localStorage.getItem('artisan_logo');
+const nom = localStorage.getItem('artisan_nom');
+const email = localStorage.getItem('artisan_contact');
+const adresse = localStorage.getItem('artisan_adresse');
+const siret = localStorage.getItem('artisan_siret');
+const sirene = localStorage.getItem('artisan_sirene');
+const tva = localStorage.getItem('artisan_tva');
+const logo = localStorage.getItem('artisan_logo');
 
-  const nomEl = document.getElementById('nomEntreprise');
-  const emailEl = document.getElementById('emailEntreprise');
-  const adresseEl = document.getElementById('adresseEntreprise');
-  const siretEl = document.getElementById('siretEntreprise');
-  const sireneEl = document.getElementById('sireneEntreprise');
-  const tvaEl = document.getElementById('tvaEntreprise');
-  const logoEl = document.getElementById('logo');
-  const logoPh = document.getElementById('logo-placeholder');
+const nomEl = document.getElementById('nomEntreprise');
+const emailEl = document.getElementById('emailEntreprise');
+const adresseEl = document.getElementById('adresseEntreprise');
+const siretEl = document.getElementById('siretEntreprise');
+const sireneEl = document.getElementById('sireneEntreprise');
+const tvaEl = document.getElementById('tvaEntreprise');
+const logoEl = document.getElementById('logo');
+const logoPh = document.getElementById('logo-placeholder');
 
-  if (nom && nomEl) { nomEl.value = nom; grow(nomEl); }
-  if (email && emailEl) { emailEl.value = email; grow(emailEl); }
-  if (adresse && adresseEl) { adresseEl.value = adresse; grow(adresseEl); }
-  if (siret && siretEl) siretEl.value = siret;
-  if (sirene && sireneEl) sireneEl.value = sirene;
-  if (tva && tvaEl) tvaEl.value = tva;
+if (nom && nomEl) { nomEl.value = nom; grow(nomEl); }
+if (email && emailEl) { emailEl.value = email; grow(emailEl); }
+if (adresse && adresseEl) { adresseEl.value = adresse; grow(adresseEl); }
+if (siret && siretEl) siretEl.value = siret;
+if (sirene && sireneEl) sireneEl.value = sirene;
+if (tva && tvaEl) tvaEl.value = tva;
 
-  if (logo && logoEl) {
-    logoEl.src = logo;
-    logoEl.style.display = 'block';
-    if (logoPh) logoPh.style.display = 'none';
-  }
+if (logo && logoEl) {
+logoEl.src = logo;
+logoEl.style.display = 'block';
+if (logoPh) logoPh.style.display = 'none';
+}
 }
 </script>
-
 </body>
 </html>
