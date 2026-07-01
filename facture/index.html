@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Facture</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 * { box-sizing: border-box; }
 body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 10px 10px 100px; }
@@ -14,7 +15,9 @@ body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 
 .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .auto-ta { width: 100%; border: none; border-bottom: 1px solid #eee; resize: none; overflow: hidden; font-family: Arial, sans-serif; font-size: 14px; background: transparent; padding: 2px 0; display: block; min-height: 26px; line-height: 1.4; }
 .auto-ta:focus { outline: none; border-bottom-color: #aaa; }
-.big-title input { font-size: 28px; font-weight: bold; text-align: right; border: none; border-bottom: 1px solid #eee; background: transparent; width: 100%; }
+.info-line { width: 100%; border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 13px; font-family: Arial, sans-serif; padding: 3px 0; margin-bottom: 2px; display: block; }
+.info-line:focus { outline: none; border-bottom-color: #aaa; }
+.big-title input { font-size: 28px; font-weight: bold; text-align: right; border: none; border-bottom: 1px solid #eee; background: transparent; width: 100%; color: navy; }
 .big-title input:focus { outline: none; }
 .meta-line { margin: 4px 0; font-size: 14px; }
 .meta-line input { border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 14px; font-family: Arial; }
@@ -38,7 +41,11 @@ td:nth-child(7), th:nth-child(7) { width: 19%; }
 td input, td textarea { width: 100%; border: none; background: transparent; font-size: 13px; font-family: Arial; resize: none; overflow: hidden; padding: 0; }
 td input:focus, td textarea:focus { outline: none; }
 .desc-ta { min-height: 24px; line-height: 1.4; display: block; }
+#dateGlobale { width: 100%; font-size: 11px; border: 1px solid #ccc; border-radius: 3px; background: #fff; padding: 1px 2px; margin-top: 3px; }
+#dateGlobale:focus { outline: none; border-color: #888; }
+.date-affichee { display: inline-block; min-height: 16px; font-size: 13px; }
 .total-box { text-align: right; margin-top: 16px; font-size: 14px; line-height: 2; }
+.total-box b { color: #d32f2f; }
 .btn-add { margin-top: 8px; background: #eee; border: 1px solid #ccc; padding: 6px 14px; cursor: pointer; border-radius: 4px; font-size: 14px; }
 .btn-add:hover { background: #ddd; }
 hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
@@ -47,13 +54,27 @@ hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
 .btns-fixed button:hover { background: #333; }
 .btn-pdf { background: #1a6dc4 !important; }
 .btn-pdf:hover { background: #144f96 !important; }
- 
+
+/* Rendu propre lors de la génération du PDF (html2pdf) */
+.pdf-render input, .pdf-render textarea { border-bottom: none !important; }
+.pdf-render .info-line { border-bottom: none !important; }
+.pdf-render #dateGlobale { border: none !important; background: transparent !important; }
+.pdf-render table { page-break-inside: avoid; table-layout: fixed; width: 100%; }
+.pdf-render td:nth-child(1), .pdf-render th:nth-child(1) { width: 32% !important; }
+.pdf-render td:nth-child(2), .pdf-render th:nth-child(2) { width: 15% !important; }
+.pdf-render td:nth-child(3), .pdf-render th:nth-child(3) { width: 5% !important; }
+.pdf-render td:nth-child(4), .pdf-render th:nth-child(4) { width: 6% !important; }
+.pdf-render td:nth-child(5), .pdf-render th:nth-child(5) { width: 10% !important; }
+.pdf-render td:nth-child(6), .pdf-render th:nth-child(6) { width: 7% !important; }
+.pdf-render td:nth-child(7), .pdf-render th:nth-child(7) { width: 25% !important; }
+
 @media print {
 @page { size: A4 portrait; margin: 15mm; }
 .btns-fixed, .upload-btn, .btn-add { display: none !important; }
 body { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
 #app { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
 input, textarea { border-bottom: none !important; }
+#dateGlobale { border: none !important; background: transparent !important; }
 table { page-break-inside: avoid; table-layout: fixed; width: 100%; }
 td:nth-child(1), th:nth-child(1) { width: 32% !important; }
 td:nth-child(2), th:nth-child(2) { width: 15% !important; }
@@ -67,9 +88,9 @@ td:nth-child(2) input { font-size: 10px !important; white-space: nowrap; }
 </style>
 </head>
 <body>
- 
+
 <input class="upload-btn" type="file" accept="image/*" onchange="loadLogo(event)">
- 
+
 <div id="app">
 <div class="top">
 <div class="left-col">
@@ -77,19 +98,22 @@ td:nth-child(2) input { font-size: 10px !important; white-space: nowrap; }
 <img id="logo" src="" style="display:none">
 <span id="logo-placeholder" style="color:#aaa;font-size:13px">Logo</span>
 </div>
-<textarea class="auto-ta" placeholder="Nom entreprise" oninput="grow(this)"></textarea>
+<textarea class="auto-ta" id="nomEntreprise" placeholder="Nom entreprise" oninput="grow(this)"></textarea>
+<input class="info-line" id="siretEntreprise" placeholder="N° SIRET">
+<input class="info-line" id="sireneEntreprise" placeholder="N° SIRENE">
+<input class="info-line" id="tvaEntreprise" placeholder="N° TVA intracommunautaire">
 <textarea class="auto-ta" id="emailEntreprise" placeholder="Email entreprise" oninput="grow(this)"></textarea>
-<textarea class="auto-ta" placeholder="Adresse entreprise" oninput="grow(this)"></textarea>
+<textarea class="auto-ta" id="adresseEntreprise" placeholder="Adresse entreprise" oninput="grow(this)"></textarea>
 </div>
- 
+
 <div class="right-col">
 <div class="big-title">
 <input value="FACTURE">
 </div>
-<div class="meta-line">Numéro : <input value="2026-1" style="width:140px"></div>
-<div class="meta-line">Date : <input type="date" style="width:150px"></div>
+<div class="meta-line">Numéro : <input id="numeroFacture" value="2026-1" style="width:140px"></div>
+<div class="meta-line">Date : <input type="date" id="dateFacture" style="width:150px"></div>
 <div class="meta-line">Type : <input value="Prestation de service" style="width:200px"></div>
- 
+
 <div class="client-box">
 <b>Client :</b>
 <textarea class="auto-ta" placeholder="Nom Prénom" oninput="grow(this)" style="text-align:right"></textarea>
@@ -99,16 +123,16 @@ td:nth-child(2) input { font-size: 10px !important; white-space: nowrap; }
 </div>
 </div>
 </div>
- 
+
 <div class="section">
 <b>Facturation :</b>
 <input placeholder="Ex: Débouchage">
 </div>
- 
+
 <table id="table">
 <tr>
 <th>Description</th>
-<th>Date</th>
+<th>Date<br><input type="date" id="dateGlobale" onchange="appliquerDate()"></th>
 <th>Qté</th>
 <th>Unité</th>
 <th>Prix</th>
@@ -117,7 +141,7 @@ td:nth-child(2) input { font-size: 10px !important; white-space: nowrap; }
 </tr>
 <tr>
 <td><textarea class="desc-ta auto-ta" placeholder="Description prestation" oninput="grow(this); calc()"></textarea></td>
-<td><input type="date"></td>
+<td class="date-cell"><span class="date-affichee"></span></td>
 <td><input type="number" value="1" oninput="calc()"></td>
 <td><input value="h"></td>
 <td><input type="number" value="0" oninput="calc()"></td>
@@ -125,17 +149,17 @@ td:nth-child(2) input { font-size: 10px !important; white-space: nowrap; }
 <td class="montant">0,00 €</td>
 </tr>
 </table>
- 
+
 <button class="btn-add" onclick="addRow()">+ Ajouter une ligne</button>
- 
+
 <div class="total-box">
 Total HT : <span id="ht">0,00</span> €<br>
 TVA : <span id="tva">0,00</span> €<br>
 <b>Total TTC : <span id="ttc">0,00</span> €</b>
 </div>
- 
+
 <hr>
- 
+
 <div class="section">
 <b>Conditions de paiement :</b><br>
 <input value="14 jours"><br><br>
@@ -143,13 +167,13 @@ TVA : <span id="tva">0,00</span> €<br>
 <input value="Résidence">
 </div>
 </div>
- 
+
 <div class="btns-fixed">
 <button onclick="envoyerEntreprise()">Envoyer entreprise</button>
-<button class="btn-pdf" onclick="window.print()">⬇ Télécharger PDF (A4)</button>
+<button class="btn-pdf" onclick="telechargerPDF()">⬇ Télécharger PDF (A4)</button>
 <button onclick="envoyerClient()">Envoyer client</button>
 </div>
- 
+
 <script>
 function loadLogo(e) {
 const img = document.getElementById('logo');
@@ -158,18 +182,18 @@ img.src = URL.createObjectURL(e.target.files[0]);
 img.style.display = 'block';
 ph.style.display = 'none';
 }
- 
+
 function grow(el) {
 el.style.height = 'auto';
 el.style.height = el.scrollHeight + 'px';
 }
- 
+
 function addRow() {
 const table = document.getElementById('table');
 const tr = document.createElement('tr');
 tr.innerHTML = `
 <td><textarea class="desc-ta auto-ta" placeholder="Description prestation" oninput="grow(this); calc()"></textarea></td>
-<td><input type="date"></td>
+<td class="date-cell"><span class="date-affichee"></span></td>
 <td><input type="number" value="1" oninput="calc()"></td>
 <td><input value="h"></td>
 <td><input type="number" value="0" oninput="calc()"></td>
@@ -177,12 +201,13 @@ tr.innerHTML = `
 <td class="montant">0,00 €</td>
 `;
 table.appendChild(tr);
+appliquerDate();
 }
- 
+
 function fmt(n) {
 return n.toFixed(2).replace('.', ',');
 }
- 
+
 function calc() {
 const rows = document.querySelectorAll('#table tr');
 let totalHT = 0, totalTVA = 0;
@@ -201,77 +226,144 @@ document.getElementById('ht').innerText = fmt(totalHT);
 document.getElementById('tva').innerText = fmt(totalTVA);
 document.getElementById('ttc').innerText = fmt(totalHT + totalTVA);
 }
- 
+
+// Date unique (bande grise du tableau) appliquée à toutes les lignes
+function formatDateFR(iso) {
+if (!iso) return '';
+const p = iso.split('-');
+if (p.length !== 3) return iso;
+return p[2] + '/' + p[1] + '/' + p[0];
+}
+
+function appliquerDate() {
+const dateInput = document.getElementById('dateGlobale');
+const formatted = formatDateFR(dateInput ? dateInput.value : '');
+document.querySelectorAll('.date-affichee').forEach(function(span) {
+span.textContent = formatted;
+});
+}
+
+// Génération PDF via html2pdf (remplace window.print() qui bugait en A4)
+function genererPDF() {
+return new Promise(function(resolve, reject) {
+const app = document.getElementById('app');
+app.classList.add('pdf-render');
+
+const numero = (document.getElementById('numeroFacture').value || 'document').replace(/[\\/:*?"<>|]/g, '-');
+
+const opt = {
+margin: [10, 10, 10, 10],
+filename: 'facture-' + numero + '.pdf',
+image: { type: 'jpeg', quality: 0.98 },
+html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 900 },
+jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+pagebreak: { mode: ['css', 'legacy'] }
+};
+
+html2pdf().set(opt).from(app).save().then(function() {
+app.classList.remove('pdf-render');
+resolve();
+}).catch(function(err) {
+app.classList.remove('pdf-render');
+reject(err);
+});
+});
+}
+
+function telechargerPDF() {
+genererPDF();
+}
+
 function envoyerEntreprise() {
 const email = document.getElementById('emailEntreprise').value.trim();
-window.location.href = 'mailto:' + email;
+if (!email) { alert("Veuillez renseigner l'email de l'entreprise."); return; }
+genererPDF().then(function() {
+const sujet = encodeURIComponent('Facture');
+const corps = encodeURIComponent("Bonjour,\n\nLa facture vient d'être téléchargée en PDF, merci de la joindre à cet e-mail.\n\nCordialement.");
+window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corps;
+});
 }
+
 function envoyerClient() {
 const email = document.getElementById('emailClient').value.trim();
-window.location.href = 'mailto:' + email;
+if (!email) { alert("Veuillez renseigner l'email du client."); return; }
+genererPDF().then(function() {
+const sujet = encodeURIComponent('Facture');
+const corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver votre facture : le PDF vient d'être téléchargé, merci de le joindre à cet e-mail.\n\nCordialement.");
+window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corps;
+});
 }
- 
+
 calc();
+appliquerDate();
 
-// AUTO-IMPORT depuis ?data= (panier Cedeo)
+// AUTO-IMPORT depuis ?data= (panier fournisseur) + profil entreprise (Centralisateur Pro)
 (function() {
-    const params = new URLSearchParams(window.location.search);
-    const data = params.get('data');
-    if (!data) return;
+chargerProfilEntreprise();
 
-    let panier;
-    try { panier = JSON.parse(decodeURIComponent(data)); } catch(e) { return; }
-    if (!Array.isArray(panier) || panier.length === 0) return;
+const params = new URLSearchParams(window.location.search);
+const data = params.get('data');
+if (!data) return;
 
-    const table = document.getElementById('table');
+let panier;
+try { panier = JSON.parse(decodeURIComponent(data)); } catch(e) { return; }
+if (!Array.isArray(panier) || panier.length === 0) return;
 
-    // Vider les lignes existantes sauf l'en-tête
-    while (table.rows.length > 1) table.deleteRow(1);
+const table = document.getElementById('table');
 
-    panier.forEach(function(art) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+// Vider les lignes existantes sauf l'en-tête
+while (table.rows.length > 1) table.deleteRow(1);
+
+panier.forEach(function(art) {
+const tr = document.createElement('tr');
+tr.innerHTML = `
 <td><textarea class="desc-ta auto-ta" oninput="grow(this); calc()">${art.des || ''}${art.ref ? ' (Réf: ' + art.ref + ')' : ''}</textarea></td>
-<td><input type="date"></td>
+<td class="date-cell"><span class="date-affichee"></span></td>
 <td><input type="number" value="${art.qte || 1}" oninput="calc()"></td>
 <td><input value="u"></td>
 <td><input type="number" value="${art.px || 0}" oninput="calc()"></td>
 <td><input type="number" value="20" oninput="calc()"></td>
 <td class="montant">0,00 €</td>`;
-        table.appendChild(tr);
-    });
+table.appendChild(tr);
+});
 
-       // Charger logo + profil depuis localStorage (enregistré dans Centralisateur Pro)
-    const nom = localStorage.getItem('artisan_nom');
-    const email = localStorage.getItem('artisan_contact');
-    const logo = localStorage.getItem('artisan_logo');
-    const adresse = localStorage.getItem('artisan-adresse-postale') || localStorage.getItem('artisan_adresse');
-
-    if (nom) {
-        const tas = document.querySelectorAll('.left-col .auto-ta');
-        if (tas[0]) { tas[0].value = nom; grow(tas[0]); }
-    }
-    if (email) {
-        const emailEl = document.getElementById('emailEntreprise');
-        if (emailEl) { emailEl.value = email; grow(emailEl); }
-    }
-    if (adresse) {
-        const tas = document.querySelectorAll('.left-col .auto-ta');
-        if (tas[2]) { tas[2].value = adresse; grow(tas[2]); }
-    }
-    if (logo) {
-        const img = document.getElementById('logo');
-        const ph = document.getElementById('logo-placeholder');
-        img.src = logo;
-        img.style.display = 'block';
-        if (ph) ph.style.display = 'none';
-    }
-
-    calc();
-    window.history.replaceState({}, document.title, window.location.pathname);
+appliquerDate();
+calc();
+window.history.replaceState({}, document.title, window.location.pathname);
 })();
 
+function chargerProfilEntreprise() {
+const nom = localStorage.getItem('artisan_nom');
+const email = localStorage.getItem('artisan_contact');
+const adresse = localStorage.getItem('artisan_adresse');
+const siret = localStorage.getItem('artisan_siret');
+const sirene = localStorage.getItem('artisan_sirene');
+const tva = localStorage.getItem('artisan_tva');
+const logo = localStorage.getItem('artisan_logo');
+
+const nomEl = document.getElementById('nomEntreprise');
+const emailEl = document.getElementById('emailEntreprise');
+const adresseEl = document.getElementById('adresseEntreprise');
+const siretEl = document.getElementById('siretEntreprise');
+const sireneEl = document.getElementById('sireneEntreprise');
+const tvaEl = document.getElementById('tvaEntreprise');
+const logoEl = document.getElementById('logo');
+const logoPh = document.getElementById('logo-placeholder');
+
+if (nom && nomEl) { nomEl.value = nom; grow(nomEl); }
+if (email && emailEl) { emailEl.value = email; grow(emailEl); }
+if (adresse && adresseEl) { adresseEl.value = adresse; grow(adresseEl); }
+if (siret && siretEl) siretEl.value = siret;
+if (sirene && sireneEl) sireneEl.value = sirene;
+if (tva && tvaEl) tvaEl.value = tva;
+
+if (logo && logoEl) {
+logoEl.src = logo;
+logoEl.style.display = 'block';
+if (logoPh) logoPh.style.display = 'none';
+}
+}
 </script>
- 
+
 </body>
 </html>
