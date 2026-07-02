@@ -66,8 +66,8 @@
         document.body.appendChild(dock);
     }
 
-    // ==========================================
-    // ACTION SUR LEROY MERLIN
+        // ==========================================
+    // ACTION SUR LEROY MERLIN (CORRIGÉ)
     // ==========================================
     if (currentUrl.includes("leroymerlin.fr")) {
         if (document.getElementById('centralisateur-dock-lm')) return;
@@ -87,23 +87,30 @@
 
         b.onclick = function() {
             const panier = [];
-            document.querySelectorAll('li.cart-offer-line').forEach(p => {
-                const name = p.querySelector('.app-vendor-title')?.textContent.trim();
+            // Utilisation d'un sélecteur plus générique qui cible les lignes de produits
+            const produits = document.querySelectorAll('div[data-testid^="cart-offer-line"]');
+            
+            produits.forEach(p => {
+                const name = p.querySelector('h2')?.textContent.trim() || p.querySelector('.app-vendor-title')?.textContent.trim();
                 const priceText = p.querySelector('.offer-price-prices')?.textContent.trim();
-                const qty = parseInt(p.querySelector('input[data-testid="quantity-selector-input"]')?.getAttribute('aria-valuenow') || 1, 10);
+                
+                // Recherche de l'input quantité plus flexible
+                const qtyInput = p.querySelector('input[type="number"], input[data-testid*="quantity"]');
+                const qty = qtyInput ? parseInt(qtyInput.value || qtyInput.getAttribute('aria-valuenow'), 10) : 1;
                 
                 let px = 0;
                 if(priceText) {
-                    const m = priceText.match(/([0-9\s\u00A0,.]+)/);
-                    if(m) px = parseFloat(m[1].replace(/\s/g,'').replace(',','.'));
+                    const m = priceText.replace(',', '.').match(/([0-9.]+)/);
+                    if(m) px = parseFloat(m[1]);
                 }
+                
                 if (name) panier.push({des: name, ref: "LM", px: px, qte: qty});
             });
 
             if (panier.length > 0) {
                 window.location.href = 'https://metaplik.github.io/FACTURATION-/facture/?data=' + encodeURIComponent(JSON.stringify(panier)) + '&adr=' + encodeURIComponent(localStorage.getItem('artisan-adresse-postale') || '');
             } else {
-                alert('Panier vide.');
+                alert('Panier non détecté. Vérifiez que vous êtes bien sur la page panier.');
             }
         };
         dock.appendChild(b);
