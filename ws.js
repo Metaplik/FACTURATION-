@@ -66,55 +66,105 @@
         document.body.appendChild(dock);
     }
 
-        // ==========================================
-    // ACTION SUR LEROY MERLIN (CORRIGÉ)
+    // ==========================================
+    // ACTION SUR LEROY MERLIN (sélecteurs réels + persistant)
     // ==========================================
     if (currentUrl.includes("leroymerlin.fr")) {
-        if (document.getElementById('centralisateur-dock-lm')) return;
 
-        const style = document.createElement('style');
-        style.innerHTML = `
-            #centralisateur-dock-lm { position: fixed; bottom: 0; left: 0; width: 100%; background: #ffffff; box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.15); z-index: 999999; padding: 12px 0; display: flex; justify-content: center; }
-            #btn-transfert-lm { background: #E66C00; color: white; padding: 12px 20px; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; }
-        `;
-        document.head.appendChild(style);
-
-        const dock = document.createElement('div');
-        dock.id = 'centralisateur-dock-lm';
-        const b = document.createElement('button');
-        b.id = 'btn-transfert-lm';
-        b.innerText = 'COPIER PANIER LEROY MERLIN';
-
-        b.onclick = function() {
+        function extrairePanierLM() {
             const panier = [];
-            // Utilisation d'un sélecteur plus générique qui cible les lignes de produits
-            const produits = document.querySelectorAll('div[data-testid^="cart-offer-line"]');
-            
-            produits.forEach(p => {
-                const name = p.querySelector('h2')?.textContent.trim() || p.querySelector('.app-vendor-title')?.textContent.trim();
-                const priceText = p.querySelector('.offer-price-prices')?.textContent.trim();
-                
-                // Recherche de l'input quantité plus flexible
-                const qtyInput = p.querySelector('input[type="number"], input[data-testid*="quantity"]');
-                const qty = qtyInput ? parseInt(qtyInput.value || qtyInput.getAttribute('aria-valuenow'), 10) : 1;
-                
-                let px = 0;
-                if(priceText) {
-                    const m = priceText.replace(',', '.').match(/([0-9.]+)/);
-                    if(m) px = parseFloat(m[1]);
+            const prixEls = document.querySelectorAll('.offer-price');
+
+            prixEls.forEach(priceEl => {
+                // Remonte jusqu'au conteneur commun qui a aussi le sélecteur de quantité
+                let line = priceEl.parentElement;
+                let safety = 0;
+                while (line && !line.querySelector('.mc-quantity-selector') && safety < 6) {
+                    line = line.parentElement;
+                    safety++;
                 }
-                
-                if (name) panier.push({des: name, ref: "LM", px: px, qte: qty});
+                if (!line) return;
+
+                // Nom du produit : dans l'aria-label du bouton "Mettre de côté"
+                let name = '';
+                const moveBtn = line.querySelector('[data-testid="cart-offer-line-desktop-move-btn"]');
+                if (moveBtn) {
+                    const label = moveBtn.getAttribute('aria-label') || '';
+                    name = label.replace(/^Mettre de côté le produit\s*/i, '').trim();
+                }
+                if (!name) return;
+
+                // Prix : prix remisé en priorité, sinon prix normal (ignore le prix barré <del>)
+                let px = 0;
+                const pricesContainer = line.querySelector('.offer-price__prices');
+                let prixTxt = '';
+                if (pricesContainer) {
+                    const discountEl = pricesContainer.querySelector('[class*="discount-price"]');
+                    if (discountEl) {
+                        prixTxt = discountEl.textContent.trim();
+                    } else {
+                        const nonDel = Array.from(pricesContainer.children).find(el => el.tagName !== 'DEL');
+                        prixTxt = nonDel ? nonDel.textContent.trim() : pricesContainer.textContent.trim();
+                    }
+                }
+                if (prixTxt) {
+                    const m = prixTxt.replace(/\s/g, '').replace(',', '.').match(/([0-9]+\.?[0-9]*)/);
+                    if (m) px = parseFloat(m[1]);
+                }
+
+                // Quantité
+                const qtyInput = line.querySelector('.mc-quantity-selector__input');
+                const qty = qtyInput ? parseInt(qtyInput.value || qtyInput.getAttribute('aria-valuenow'), 10) : 1;
+
+                panier.push({ des: name, ref: 'LM', px: px, qte: qty || 1 });
             });
 
-            if (panier.length > 0) {
-                window.location.href = 'https://metaplik.github.io/FACTURATION-/facture/?data=' + encodeURIComponent(JSON.stringify(panier)) + '&adr=' + encodeURIComponent(localStorage.getItem('artisan-adresse-postale') || '');
-            } else {
-                alert('Panier non détecté. Vérifiez que vous êtes bien sur la page panier.');
-            }
-        };
-        dock.appendChild(b);
-        document.body.appendChild(dock);
+            return panier;
+        }
+
+        function injectDockLM() {
+            if (document.getElementById('centralisateur-dock-lm')) return;
+
+            const style = document.createElement('style');
+            style.innerHTML = `
+                #centralisateur-dock-lm { position: fixed; bottom: 0; left: 0; width: 100%; background: #ffffff; box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.15); z-index: 999999; padding: 12px 0; display: flex; justify-content: center; }
+                #btn-transfert-lm { background: #E66C00; color: white; padding: 12px 20px; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; }
+            `;
+            document.head.appendChild(style);
+
+            const dock = document.createElement('div');
+            dock.id = 'centralisateur-dock-lm';
+            const b = document.createElement('button');
+            b.id = 'btn-transfert-lm';
+            b.innerText = 'COPIER PANIER LEROY MERLIN';
+
+            b.onclick = function() {
+                const panier = extrairePanierLM();
+
+                if (panier.length > 0) {
+                    window.location.href = 'https://metaplik.github.io/FACTURATION-/facture/?data=' + encodeURIComponent(JSON.stringify(panier)) + '&adr=' + encodeURIComponent(localStorage.getItem('artisan-adresse-postale') || '');
+                } else {
+                    const candidats = document.querySelectorAll('[data-testid]');
+                    const echantillon = Array.from(candidats).slice(0, 15).map(el => el.getAttribute('data-testid')).join('\n');
+                    alert('Panier non détecté.\n\nAttributs data-testid trouvés (échantillon) :\n\n' + (echantillon || 'aucun'));
+                }
+            };
+            dock.appendChild(b);
+            document.body.appendChild(dock);
+        }
+
+        injectDockLM();
+
+        // Réinjecte automatiquement le bouton s'il disparaît (React redessine la page)
+        const observerLM = new MutationObserver(function() {
+            if (!document.getElementById('centralisateur-dock-lm')) injectDockLM();
+        });
+        observerLM.observe(document.body, { childList: true, subtree: true });
+
+        // Filet de sécurité supplémentaire
+        setInterval(function() {
+            if (!document.getElementById('centralisateur-dock-lm')) injectDockLM();
+        }, 1500);
     }
 
     // ==========================================
