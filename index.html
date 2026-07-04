@@ -123,6 +123,34 @@
         <button type="button" class="btn-submit" onclick="sauvegarderProfil()">Enregistrer mon profil</button>
     </div>
 
+    <div class="panel">
+        <h2>CLIENT :</h2>
+
+        <div class="form-group">
+            <label>Nom Prénom</label>
+            <input type="text" id="client-nom" placeholder="Nom Prénom">
+        </div>
+
+        <div class="form-group">
+            <label>Adresse + code postal</label>
+            <input type="text" id="client-adresse" placeholder="Adresse + code postal">
+        </div>
+
+        <div class="form-group">
+            <label>Téléphone</label>
+            <input type="text" id="client-tel" placeholder="Téléphone">
+        </div>
+
+        <div class="form-group">
+            <label>Email client</label>
+            <input type="text" id="client-email" placeholder="Email client">
+        </div>
+
+        <button type="button" onclick="sauvegarderClient()" style="width:100%;background:#EAB308;color:#1E293B;padding:14px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;text-transform:uppercase;">Enregistrer mon profil</button>
+
+        <button type="button" onclick="ouvrirFacture()" style="width:100%;background:#DC2626;color:white;padding:14px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;text-transform:uppercase;">Facture</button>
+    </div>
+
     <h2>2. Ouvrir le site fournisseur</h2>
     <div class="grid-fournisseurs" style="margin-top: 12px; margin-bottom: 40px;">
 
@@ -170,6 +198,16 @@
             statusLabel.textContent = '✅ Logo enregistré en mémoire';
             statusLabel.classList.add('active');
         }
+
+        const clientNom = localStorage.getItem('clientNom');
+        const clientAdresse = localStorage.getItem('clientAdresse');
+        const clientTel = localStorage.getItem('clientTel');
+        const clientEmail = localStorage.getItem('clientEmail');
+
+        if (clientNom) document.getElementById('client-nom').value = clientNom;
+        if (clientAdresse) document.getElementById('client-adresse').value = clientAdresse;
+        if (clientTel) document.getElementById('client-tel').value = clientTel;
+        if (clientEmail) document.getElementById('client-email').value = clientEmail;
     });
 
     function profilEstComplet() {
@@ -226,6 +264,17 @@
     function ouvrirSiteFournisseur(fournisseur, url) {
         localStorage.setItem('fournisseur_actif', fournisseur);
         window.location.href = url;
+    }
+
+    function sauvegarderClient() {
+        localStorage.setItem('clientNom', document.getElementById('client-nom').value.trim());
+        localStorage.setItem('clientAdresse', document.getElementById('client-adresse').value.trim());
+        localStorage.setItem('clientTel', document.getElementById('client-tel').value.trim());
+        localStorage.setItem('clientEmail', document.getElementById('client-email').value.trim());
+    }
+
+    function ouvrirFacture() {
+        window.open('https://metaplik.github.io/FACTURATION-/facture/', '_blank');
     }
 </script>
 </body>
