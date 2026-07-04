@@ -188,4 +188,43 @@
             }, 200);
         }
     }
+
+    // ==========================================
+    // INJECTION DES INFOS CLIENT (GITHUB)
+    // Lues directement en localStorage (même domaine github.io que PRO+)
+    // ==========================================
+    if (currentUrl.includes("github.io")) {
+        let tClient = 0;
+        const intervalClient = setInterval(function() {
+            const champsTa = document.querySelectorAll('.client-box .auto-ta');
+            const champsInput = document.querySelectorAll('.client-box input');
+            const nomEl = champsTa[0];
+            const adresseEl = champsTa[1];
+            const telEl = champsInput[0];
+            const emailEl = document.getElementById('emailClient');
+
+            if (nomEl && adresseEl && telEl) {
+                const clientNom = localStorage.getItem('clientNom');
+                const clientAdresse = localStorage.getItem('clientAdresse');
+                const clientTel = localStorage.getItem('clientTel');
+                const clientEmail = localStorage.getItem('clientEmail');
+
+                if (clientNom) {
+                    nomEl.value = clientNom;
+                    nomEl.style.height = 'auto';
+                    nomEl.style.height = nomEl.scrollHeight + 'px';
+                }
+                if (clientAdresse) {
+                    adresseEl.value = clientAdresse;
+                    adresseEl.style.height = 'auto';
+                    adresseEl.style.height = adresseEl.scrollHeight + 'px';
+                }
+                if (clientTel) telEl.value = clientTel;
+                if (clientEmail && emailEl) emailEl.value = clientEmail;
+
+                clearInterval(intervalClient);
+            }
+            if (++tClient > 20) clearInterval(intervalClient);
+        }, 200);
+    }
 })();
