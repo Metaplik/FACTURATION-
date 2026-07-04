@@ -2,6 +2,45 @@
     const currentUrl = window.location.href;
 
     // ==========================================
+    // BOUTON RETOUR DISCRET (toutes pages)
+    // ==========================================
+    if (!document.getElementById('centralisateur-btn-retour')) {
+        const styleRetour = document.createElement('style');
+        styleRetour.innerHTML = `
+            #centralisateur-btn-retour {
+                position: fixed;
+                bottom: 14px;
+                right: 14px;
+                width: 34px;
+                height: 34px;
+                background: rgba(30, 41, 59, 0.55);
+                color: #ffffff;
+                border: none;
+                border-radius: 50%;
+                font-size: 16px;
+                line-height: 34px;
+                text-align: center;
+                cursor: pointer;
+                z-index: 999998;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                opacity: 0.6;
+                transition: opacity 0.2s;
+            }
+            #centralisateur-btn-retour:hover { opacity: 1; }
+        `;
+        document.head.appendChild(styleRetour);
+
+        const btnRetour = document.createElement('button');
+        btnRetour.id = 'centralisateur-btn-retour';
+        btnRetour.innerText = '←';
+        btnRetour.title = 'Retour';
+        btnRetour.onclick = function() {
+            window.history.back();
+        };
+        document.body.appendChild(btnRetour);
+    }
+
+    // ==========================================
     // EXTRACTION DE L'ADRESSE EN TÂCHE DE FOND
     // ==========================================
     if (!currentUrl.includes("cedeo.fr") && !currentUrl.includes("github.io") && !currentUrl.includes("leroymerlin.fr")) {
