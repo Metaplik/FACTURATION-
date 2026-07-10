@@ -16,8 +16,12 @@ body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 
 .auto-ta:focus { outline: none; border-bottom-color: #aaa; }
 .info-line { width: 100%; border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 13px; font-family: Arial, sans-serif; padding: 3px 0; margin-bottom: 2px; display: block; }
 .info-line:focus { outline: none; border-bottom-color: #aaa; }
+.big-title { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
 .big-title input { font-size: 28px; font-weight: bold; text-align: right; border: none; border-bottom: 1px solid #eee; background: transparent; width: 100%; color: navy; }
 .big-title input:focus { outline: none; }
+.toggle-doc { display: inline-flex; border: 1px solid #ccc; border-radius: 20px; overflow: hidden; font-size: 12px; margin-bottom: 8px; }
+.toggle-doc button { border: none; background: #f2f2f2; padding: 5px 14px; cursor: pointer; font-weight: bold; color: #666; }
+.toggle-doc button.actif { background: navy; color: white; }
 .meta-line { margin: 4px 0; font-size: 14px; }
 .meta-line input { border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 14px; font-family: Arial; }
 .meta-line input:focus { outline: none; }
@@ -27,8 +31,10 @@ body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 
 .section { margin-top: 24px; }
 .section input { border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 14px; font-family: Arial; width: 100%; }
 .section input:focus { outline: none; }
+.section-label { border: none; border-bottom: 1px solid #eee; background: transparent; font-size: 14px; font-family: Arial; font-weight: bold; width: 140px; padding: 0; margin-right: 6px; }
+.section-label:focus { outline: none; }
 table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
-th { background: #eee; font-size: 13px; }
+th { background: #FEF3C7; font-size: 13px; }
 td, th { border: 1px solid #ccc; padding: 5px; text-align: center; vertical-align: top; }
 td:nth-child(1), th:nth-child(1) { width: 36%; text-align: left; }
 td:nth-child(2), th:nth-child(2) { width: 13%; }
@@ -48,16 +54,19 @@ td input:focus, td textarea:focus { outline: none; }
 .btn-add { margin-top: 8px; background: #eee; border: 1px solid #ccc; padding: 6px 14px; cursor: pointer; border-radius: 4px; font-size: 14px; }
 .btn-add:hover { background: #ddd; }
 hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
-.btns-fixed { position: fixed; bottom: 10px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 10px; }
-.btns-fixed button { background: #555; color: #fff; border: none; padding: 11px 18px; cursor: pointer; border-radius: 4px; font-size: 13px; }
+.legal-mention { font-size: 11px; color: #555; border: 1px solid #eee; background: transparent; width: 100%; font-family: Arial; padding: 4px 0; resize: vertical; min-height: 40px; }
+.legal-mention:focus { outline: none; border-color: #aaa; }
+.btns-fixed { position: fixed; bottom: 10px; left: 0; right: 0; display: flex; justify-content: space-between; gap: 6px; padding: 0 10px; flex-wrap: wrap; }
+.btns-fixed button { flex: 1; min-width: 70px; background: #555; color: #fff; border: none; padding: 11px 10px; cursor: pointer; border-radius: 4px; font-size: 12px; }
 .btns-fixed button:hover { background: #333; }
 .btn-pdf { background: #1a6dc4 !important; }
 .btn-pdf:hover { background: #144f96 !important; }
+.btn-agenda { background: #2563EB !important; }
+.btn-agenda:hover { background: #1d4ed8 !important; }
 
-/* CONFIGURATION POUR L'IMPRESSION PROPRE DU TÉLÉPHONE */
 @media print {
     @page { size: A4 portrait; margin: 15mm; }
-    .btns-fixed, .upload-btn, .btn-add { display: none !important; }
+    .btns-fixed, .upload-btn, .btn-add, .toggle-doc { display: none !important; }
     body { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
     input, textarea { border-bottom: none !important; }
     #dateGlobale { border: none !important; background: transparent !important; display: none !important; }
@@ -87,15 +96,20 @@ hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
 <input class="info-line" id="siretEntreprise" placeholder="N° SIRET">
 <input class="info-line" id="sireneEntreprise" placeholder="N° SIRENE">
 <input class="info-line" id="tvaEntreprise" placeholder="N° TVA intracommunautaire">
+<input class="info-line" id="telEntreprise" placeholder="Téléphone entreprise">
 <textarea class="auto-ta" id="emailEntreprise" placeholder="Email entreprise" oninput="grow(this)"></textarea>
 <textarea class="auto-ta" id="adresseEntreprise" placeholder="Adresse entreprise" oninput="grow(this)"></textarea>
 </div>
 
 <div class="right-col">
-<div class="big-title">
-<input value="FACTURE">
+<div class="toggle-doc">
+<button type="button" id="btn-type-facture" class="actif" onclick="choisirTypeDocument('FACTURE')">FACTURE</button>
+<button type="button" id="btn-type-devis" onclick="choisirTypeDocument('DEVIS')">DEVIS</button>
 </div>
-<div class="meta-line">Numéro : <input id="numeroFacture" value="2026-1" style="width:140px"></div>
+<div class="big-title">
+<input id="titreDocument" value="FACTURE">
+</div>
+<div class="meta-line">Numéro : <input id="numeroFacture" value="F-2026-1" style="width:140px"></div>
 <div class="meta-line">Date : <input type="date" id="dateFacture" style="width:150px"></div>
 <div class="meta-line">Type : <input value="Prestation de service" style="width:200px"></div>
 
@@ -110,7 +124,7 @@ hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
 </div>
 
 <div class="section">
-<b>Facturation :</b>
+<input class="section-label" id="labelFacturation" value="Facturation :">
 <input placeholder="Ex: Débouchage">
 </div>
 
@@ -147,16 +161,17 @@ TVA : <span id="tva">0,00</span> €<br>
 
 <div class="section">
 <b>Conditions de paiement :</b><br>
-<input value="14 jours"><br><br>
-<b>Code service :</b><br>
-<input value="Résidence">
+<input id="conditionsPaiement" value="Par virement, espèce, chèque ou carte bancaire"><br><br>
+<b>Mentions légales :</b><br>
+<textarea class="legal-mention" id="mentionLegale" rows="2">Article L441-10 du Code de commerce : tout retard de paiement entraîne une pénalité, ainsi qu'une indemnité forfaitaire de 40 € pour frais de recouvrement.</textarea>
 </div>
 </div>
 
 <div class="btns-fixed">
 <button onclick="envoyerEntreprise()">Envoyer entreprise</button>
-<button class="btn-pdf" onclick="imprimerNatif()">⬇ Imprimer / PDF</button>
+<button class="btn-pdf" onclick="imprimerNatif()">⬇ PDF</button>
 <button onclick="envoyerClient()">Envoyer client</button>
+<button class="btn-agenda" onclick="ajouterFactureAgenda()">Agenda</button>
 </div>
 
 <script>
@@ -227,7 +242,6 @@ span.textContent = formatted;
 });
 }
 
-// LE SYSTÈME NATIF ULTRA-LÉGER ET DIRECT
 function imprimerNatif() {
     window.print();
 }
@@ -235,23 +249,61 @@ function imprimerNatif() {
 function envoyerEntreprise() {
 const email = document.getElementById('emailEntreprise').value.trim();
 if (!email) { alert("Veuillez renseigner l'email de l'entreprise."); return; }
-const sujet = encodeURIComponent('Facture');
-const corps = encodeURIComponent("Bonjour,\n\nLa facture vient d'être émise. Merci de l'enregistrer.\n\nCordialement.");
+const type = document.getElementById('titreDocument').value || 'Facture';
+const sujet = encodeURIComponent(type);
+const corps = encodeURIComponent("Bonjour,\n\nLe document vient d'être émis. Merci de l'enregistrer.\n\nCordialement.");
 window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corps;
 }
 
 function envoyerClient() {
 const email = document.getElementById('emailClient').value.trim();
 if (!email) { alert("Veuillez renseigner l'email du client."); return; }
-const sujet = encodeURIComponent('Facture');
-const corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver ci-joint votre facture.\n\nCordialement.");
+const type = document.getElementById('titreDocument').value || 'Facture';
+const sujet = encodeURIComponent(type);
+const corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver ci-joint votre document.\n\nCordialement.");
 window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corps;
+}
+
+// ===================== BASCULE FACTURE / DEVIS =====================
+function choisirTypeDocument(type) {
+    const titre = document.getElementById('titreDocument');
+    const numero = document.getElementById('numeroFacture');
+    const label = document.getElementById('labelFacturation');
+    const btnFacture = document.getElementById('btn-type-facture');
+    const btnDevis = document.getElementById('btn-type-devis');
+
+    titre.value = type;
+    label.value = (type === 'DEVIS') ? 'Devis :' : 'Facturation :';
+
+    const ancienNumero = numero.value || '';
+    const suffixe = ancienNumero.replace(/^[FD]-/, '');
+    numero.value = (type === 'DEVIS' ? 'D-' : 'F-') + (suffixe || genererSuffixeNumero(type));
+
+    btnFacture.classList.toggle('actif', type === 'FACTURE');
+    btnDevis.classList.toggle('actif', type === 'DEVIS');
+}
+
+function genererSuffixeNumero(type) {
+    const cle = (type === 'DEVIS') ? 'compteur_devis' : 'compteur_facture';
+    let n = parseInt(localStorage.getItem(cle) || '0', 10) + 1;
+    localStorage.setItem(cle, String(n));
+    return new Date().getFullYear() + '-' + n;
+}
+
+// ===================== AGENDA =====================
+function ajouterFactureAgenda() {
+    const type = document.getElementById('titreDocument').value || 'Facture';
+    const numero = document.getElementById('numeroFacture').value || '';
+    const clientNomEl = document.querySelector('.client-box .auto-ta');
+    const nomClient = clientNomEl ? clientNomEl.value : '';
+    const titre = type + ' ' + numero + (nomClient ? ' - ' + nomClient : '');
+    const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(titre);
+    window.open(url, '_blank');
 }
 
 calc();
 appliquerDate();
 
-// AUTO-IMPORT depuis ?data= (panier fournisseur) + profil entreprise
 (function() {
 chargerProfilEntreprise();
 
@@ -291,6 +343,7 @@ const adresse = localStorage.getItem('artisan_adresse');
 const siret = localStorage.getItem('artisan_siret');
 const sirene = localStorage.getItem('artisan_sirene');
 const tva = localStorage.getItem('artisan_tva');
+const telephone = localStorage.getItem('artisan_telephone');
 const logo = localStorage.getItem('artisan_logo');
 
 const nomEl = document.getElementById('nomEntreprise');
@@ -299,6 +352,7 @@ const adresseEl = document.getElementById('adresseEntreprise');
 const siretEl = document.getElementById('siretEntreprise');
 const sireneEl = document.getElementById('sireneEntreprise');
 const tvaEl = document.getElementById('tvaEntreprise');
+const telEl = document.getElementById('telEntreprise');
 const logoEl = document.getElementById('logo');
 const logoPh = document.getElementById('logo-placeholder');
 
@@ -308,6 +362,7 @@ if (adresse && adresseEl) { adresseEl.value = adresse; grow(adresseEl); }
 if (siret && siretEl) siretEl.value = siret;
 if (sirene && sireneEl) sireneEl.value = sirene;
 if (tva && tvaEl) tvaEl.value = tva;
+if (telephone && telEl) telEl.value = telephone;
 
 if (logo && logoEl) {
 logoEl.src = logo;
