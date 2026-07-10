@@ -63,6 +63,8 @@ hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
 .btn-pdf:hover { background: #144f96 !important; }
 .btn-agenda { background: #2563EB !important; }
 .btn-agenda:hover { background: #1d4ed8 !important; }
+.btn-enregistrer { background: #059669 !important; }
+.btn-enregistrer:hover { background: #047857 !important; }
 
 @media print {
     @page { size: A4 portrait; margin: 15mm; }
@@ -172,8 +174,24 @@ TVA : <span id="tva">0,00</span> €<br>
 <button class="btn-pdf" onclick="imprimerNatif()">⬇ PDF</button>
 <button onclick="envoyerClient()">Envoyer client</button>
 <button class="btn-agenda" onclick="ajouterFactureAgenda()">Agenda</button>
+<button class="btn-enregistrer" onclick="enregistrerDocumentFirestore()">Enregistrer</button>
 </div>
+<div id="enregistrer-message" style="position:fixed;bottom:60px;left:10px;right:10px;background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;padding:10px 14px;border-radius:8px;font-size:13px;display:none;z-index:100;"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCI1ZNhesbffGJ0VqUxyIoEhSwLwqBcyPE",
+        authDomain: "proplus-e969a.firebaseapp.com",
+        projectId: "proplus-e969a",
+        storageBucket: "proplus-e969a.firebasestorage.app",
+        messagingSenderId: "262149416577",
+        appId: "1:262149416577:web:928517efa7336a43550f80"
+    };
+    firebase.initializeApp(firebaseConfig);
+</script>
 <script>
 function loadLogo(e) {
 const img = document.getElementById('logo');
@@ -299,6 +317,69 @@ function ajouterFactureAgenda() {
     const titre = type + ' ' + numero + (nomClient ? ' - ' + nomClient : '');
     const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(titre);
     window.open(url, '_blank');
+}
+
+// ===================== ENREGISTREMENT FIRESTORE =====================
+function afficherMessageEnregistrer(texte, ok) {
+    const div = document.getElementById('enregistrer-message');
+    div.textContent = texte;
+    div.style.background = ok ? '#D1FAE5' : '#FEF3C7';
+    div.style.borderColor = ok ? '#059669' : '#F59E0B';
+    div.style.color = ok ? '#065F46' : '#92400E';
+    div.style.display = 'block';
+    setTimeout(function() { div.style.display = 'none'; }, 5000);
+}
+
+function clientCorrespondEnregistre(nomClient) {
+    try {
+        const brut = localStorage.getItem('clients_liste');
+        const liste = brut ? JSON.parse(brut) : [];
+        if (!Array.isArray(liste)) return false;
+        const cible = (nomClient || '').trim().toLowerCase();
+        return liste.some(function(c) { return (c.nom || '').trim().toLowerCase() === cible; });
+    } catch (e) {
+        return false;
+    }
+}
+
+function enregistrerDocumentFirestore() {
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        afficherMessageEnregistrer("Vous n'êtes pas connecté à PRO+, impossible d'enregistrer.", false);
+        return;
+    }
+
+    const type = document.getElementById('titreDocument').value || 'FACTURE';
+    const numero = document.getElementById('numeroFacture').value || '';
+    const clientNomEl = document.querySelector('.client-box .auto-ta');
+    const nomClient = clientNomEl ? clientNomEl.value.trim() : '';
+    const montantTTC = document.getElementById('ttc').innerText || '0,00';
+    const date = document.getElementById('dateFacture').value || '';
+
+    if (!nomClient) {
+        afficherMessageEnregistrer("Renseignez le nom du client avant d'enregistrer.", false);
+        return;
+    }
+
+    const rattache = clientCorrespondEnregistre(nomClient);
+
+    firebase.firestore().collection('documents').add({
+        type: type,
+        numero: numero,
+        clientNom: nomClient,
+        montantTTC: montantTTC,
+        date: date,
+        statut: 'en attente',
+        creeLe: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function() {
+        if (rattache) {
+            afficherMessageEnregistrer(type + ' ' + numero + ' enregistrée et rattachée à ' + nomClient + '.', true);
+        } else {
+            afficherMessageEnregistrer('Enregistré, mais "' + nomClient + '" ne correspond à aucun client enregistré sur PRO+ — ce document ne sera pas rattaché à une fiche client.', false);
+        }
+    }).catch(function(err) {
+        afficherMessageEnregistrer("Erreur lors de l'enregistrement : " + err.message, false);
+    });
 }
 
 calc();
