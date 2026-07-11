@@ -326,12 +326,17 @@ function choisirTypeDocument(type, regenererNumero) {
     }
 }
 
-function genererNumeroAutomatique(type) {
+function genererNumeroAutomatique(type, tentative) {
+    tentative = tentative || 1;
     const numeroChamp = document.getElementById('numeroFacture');
     numeroChamp.value = 'Génération du numéro...';
     (function attendreEtGenerer() {
         if (!authPret) { setTimeout(attendreEtGenerer, 150); return; }
-        if (!utilisateurActuel) { numeroChamp.value = ''; return; }
+        if (!utilisateurActuel) {
+            numeroChamp.value = '';
+            afficherMessageEnregistrer("Numéro non généré : vous n'êtes pas connecté à PRO+.", false);
+            return;
+        }
         const cleCompteur = (type === 'DEVIS') ? 'devis' : 'facture';
         const prefixe = (type === 'DEVIS') ? 'D-' : 'F-';
         const annee = new Date().getFullYear();
@@ -346,8 +351,13 @@ function genererNumeroAutomatique(type) {
         }).then(function(n) {
             numeroChamp.value = prefixe + annee + '-' + n;
         }).catch(function(err) {
-            numeroChamp.value = prefixe + annee + '-1';
-            afficherMessageEnregistrer('Numérotation automatique indisponible (' + err.message + '), numéro par défaut proposé — vérifiez avant enregistrement.', false);
+            if (tentative < 4) {
+                // Réessai automatique (souvent un simple souci de synchronisation juste après connexion)
+                setTimeout(function() { genererNumeroAutomatique(type, tentative + 1); }, tentative * 800);
+            } else {
+                numeroChamp.value = '';
+                afficherMessageEnregistrer('Échec de la numérotation automatique après plusieurs tentatives : "' + err.message + '". Tapez le numéro manuellement, ou rechargez la page.', false);
+            }
         });
     })();
 }
