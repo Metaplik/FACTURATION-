@@ -2,45 +2,6 @@
     const currentUrl = window.location.href;
 
     // ==========================================
-    // BOUTON RETOUR DISCRET (toutes pages)
-    // ==========================================
-    if (!document.getElementById('centralisateur-btn-retour')) {
-        const styleRetour = document.createElement('style');
-        styleRetour.innerHTML = `
-            #centralisateur-btn-retour {
-                position: fixed;
-                bottom: 14px;
-                right: 14px;
-                width: 34px;
-                height: 34px;
-                background: rgba(30, 41, 59, 0.55);
-                color: #ffffff;
-                border: none;
-                border-radius: 50%;
-                font-size: 16px;
-                line-height: 34px;
-                text-align: center;
-                cursor: pointer;
-                z-index: 999998;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-                opacity: 0.6;
-                transition: opacity 0.2s;
-            }
-            #centralisateur-btn-retour:hover { opacity: 1; }
-        `;
-        document.head.appendChild(styleRetour);
-
-        const btnRetour = document.createElement('button');
-        btnRetour.id = 'centralisateur-btn-retour';
-        btnRetour.innerText = '←';
-        btnRetour.title = 'Retour';
-        btnRetour.onclick = function() {
-            window.history.back();
-        };
-        document.body.appendChild(btnRetour);
-    }
-
-    // ==========================================
     // EXTRACTION DE L'ADRESSE EN TÂCHE DE FOND
     // ==========================================
     if (!currentUrl.includes("cedeo.fr") && !currentUrl.includes("github.io") && !currentUrl.includes("leroymerlin.fr")) {
@@ -115,7 +76,6 @@
             const prixEls = document.querySelectorAll('.offer-price');
 
             prixEls.forEach(priceEl => {
-                // Remonte jusqu'au conteneur commun qui a aussi le sélecteur de quantité
                 let line = priceEl.parentElement;
                 let safety = 0;
                 while (line && !line.querySelector('.mc-quantity-selector') && safety < 6) {
@@ -124,7 +84,6 @@
                 }
                 if (!line) return;
 
-                // Nom du produit : dans l'aria-label du bouton "Mettre de côté"
                 let name = '';
                 const moveBtn = line.querySelector('[data-testid="cart-offer-line-desktop-move-btn"]');
                 if (moveBtn) {
@@ -133,7 +92,6 @@
                 }
                 if (!name) return;
 
-                // Prix : prix remisé en priorité, sinon prix normal (ignore le prix barré <del>)
                 let px = 0;
                 const pricesContainer = line.querySelector('.offer-price__prices');
                 let prixTxt = '';
@@ -151,7 +109,6 @@
                     if (m) px = parseFloat(m[1]);
                 }
 
-                // Quantité
                 const qtyInput = line.querySelector('.mc-quantity-selector__input');
                 const qty = qtyInput ? parseInt(qtyInput.value || qtyInput.getAttribute('aria-valuenow'), 10) : 1;
 
@@ -194,13 +151,11 @@
 
         injectDockLM();
 
-        // Réinjecte automatiquement le bouton s'il disparaît (React redessine la page)
         const observerLM = new MutationObserver(function() {
             if (!document.getElementById('centralisateur-dock-lm')) injectDockLM();
         });
         observerLM.observe(document.body, { childList: true, subtree: true });
 
-        // Filet de sécurité supplémentaire
         setInterval(function() {
             if (!document.getElementById('centralisateur-dock-lm')) injectDockLM();
         }, 1500);
