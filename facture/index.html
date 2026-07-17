@@ -54,7 +54,7 @@ td input:focus, td textarea:focus { outline: none; }
 .btn-add { margin-top: 8px; background: #eee; border: 1px solid #ccc; padding: 6px 14px; cursor: pointer; border-radius: 4px; font-size: 14px; }
 .btn-add:hover { background: #ddd; }
 hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
-.legal-mention { font-size: 11px; color: #555; border: 1px solid #eee; background: transparent; width: 100%; font-family: Arial; padding: 4px 0; resize: vertical; min-height: 40px; }
+.legal-mention { font-size: 11px; color: #555; border: 1px solid #eee; background: transparent; width: 100%; font-family: Arial; padding: 4px 0; resize: vertical; min-height: 40px; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
 .legal-mention:focus { outline: none; border-color: #aaa; }
 .btns-fixed { position: fixed; bottom: 10px; left: 0; right: 0; display: flex; justify-content: space-between; gap: 6px; padding: 0 10px; flex-wrap: wrap; }
 .btns-fixed button { flex: 1; min-width: 70px; background: #555; color: #fff; border: none; padding: 11px 10px; cursor: pointer; border-radius: 4px; font-size: 12px; }
@@ -112,7 +112,7 @@ hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
 <input id="titreDocument" value="FACTURE">
 </div>
 <div class="meta-line">Numéro : <input id="numeroFacture" value="" style="width:140px"></div>
-<div class="meta-line">Date : <input type="date" id="dateFacture" style="width:150px"></div>
+<div class="meta-line">Date : <input type="date" id="dateFacture" style="width:150px" onchange="calculerValiditeDevis()"></div>
 <div class="meta-line">Type : <input value="Prestation de service" style="width:200px"></div>
 
 <div class="client-box">
@@ -161,11 +161,34 @@ TVA : <span id="tva">0,00</span> €<br>
 
 <hr>
 
+<div class="section" id="bloc-validite-devis" style="display:none;">
+<b>Devis valable jusqu'au :</b><br>
+<input id="validiteDevis" type="date">
+</div>
+
 <div class="section">
-<b>Conditions de paiement :</b><br>
-<input id="conditionsPaiement" value="Par virement, espèce, chèque ou carte bancaire"><br><br>
+<b>Modalités de paiement :</b><br>
+<input id="conditionsPaiement" value="Par virement, espèce ou carte bancaire"><br><br>
+<b>Informations bancaires :</b><br>
+IBAN : <input id="ibanEntreprise" placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX" style="margin-bottom:4px;"><br>
+BIC : <input id="bicEntreprise" placeholder="XXXXXXXX"><br><br>
 <b>Mentions légales :</b><br>
-<textarea class="legal-mention" id="mentionLegale" rows="2">Article L441-10 du Code de commerce : tout retard de paiement entraîne une pénalité, ainsi qu'une indemnité forfaitaire de 40 € pour frais de recouvrement.</textarea>
+<textarea class="legal-mention" id="mentionLegale" rows="3">Article L441-10 du Code de commerce : tout retard de
+paiement entraîne une pénalité, ainsi qu'une indemnité
+forfaitaire de 40 € pour frais de recouvrement.</textarea>
+</div>
+
+<div class="section" id="bloc-signature" style="text-align:right;">
+<b>Signature du client :</b><br>
+<div id="signature-affichee" style="border:1px solid #ccc; height:80px; width:220px; margin-left:auto; margin-top:6px;"></div>
+</div>
+
+<div id="bloc-pad-signature" style="display:none;text-align:center;margin-top:24px;">
+<b>Signez ici pour accepter ce devis :</b><br>
+<canvas id="pad-signature" width="320" height="140" style="border:1px solid #999;border-radius:6px;touch-action:none;margin-top:10px;background:#fff;"></canvas><br>
+<button type="button" onclick="effacerSignaturePad()" style="margin-top:8px;background:#eee;border:1px solid #ccc;padding:6px 14px;border-radius:4px;cursor:pointer;">Effacer</button>
+<button type="button" onclick="validerSignature()" style="margin-top:8px;margin-left:8px;background:#059669;color:white;border:none;padding:8px 18px;border-radius:4px;cursor:pointer;font-weight:bold;">Valider ma signature</button>
+<div id="signature-message" style="margin-top:10px;font-size:13px;"></div>
 </div>
 </div>
 
@@ -173,6 +196,7 @@ TVA : <span id="tva">0,00</span> €<br>
 <button onclick="envoyerEntreprise()">Envoyer entreprise</button>
 <button class="btn-pdf" onclick="imprimerNatif()">⬇ PDF</button>
 <button onclick="envoyerClient()">Envoyer client</button>
+
 <button class="btn-agenda" onclick="ajouterFactureAgenda()">Agenda</button>
 <button class="btn-enregistrer" id="btn-enregistrer" onclick="enregistrerDocumentFirestore()" disabled>Connexion...</button>
 </div>
@@ -301,65 +325,100 @@ window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corp
 function envoyerClient() {
 const email = document.getElementById('emailClient').value.trim();
 if (!email) { alert("Veuillez renseigner l'email du client."); return; }
-const type = document.getElementById('titreDocument').value || 'Facture';
-const sujet = encodeURIComponent(type);
-const corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver ci-joint votre document.\n\nCordialement.");
-window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corps;
+
+sauvegarderDocument().then(function(r) {
+    const sujet = encodeURIComponent(r.type + ' ' + r.numero);
+    let corps;
+    if (r.type === 'DEVIS' && docIdCourant) {
+        const lien = 'https://metaplik.github.io/FACTURATION-/facture/?docId=' + docIdCourant + '&signature=1';
+        corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver votre devis via ce lien. Vous pouvez le consulter et le signer directement en ligne :\n" + lien + "\n\nCordialement.");
+    } else {
+        corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver ci-joint votre document.\n\nCordialement.");
+    }
+    window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corps;
+}).catch(function(err) {
+    afficherMessageEnregistrer(err.message, false);
+});
 }
 
 // ===================== BASCULE FACTURE / DEVIS =====================
-function choisirTypeDocument(type, regenererNumero) {
-    if (regenererNumero === undefined) regenererNumero = true;
+let numeroEstDefinitif = false; // true seulement quand un document existant (docId) est rouvert
+
+function choisirTypeDocument(type, estChargementDocument) {
     const titre = document.getElementById('titreDocument');
     const label = document.getElementById('labelFacturation');
     const btnFacture = document.getElementById('btn-type-facture');
     const btnDevis = document.getElementById('btn-type-devis');
+    const blocValidite = document.getElementById('bloc-validite-devis');
 
     titre.value = type;
     label.value = (type === 'DEVIS') ? 'Devis :' : 'Facturation :';
+    blocValidite.style.display = (type === 'DEVIS') ? 'block' : 'none';
 
     btnFacture.classList.toggle('actif', type === 'FACTURE');
     btnDevis.classList.toggle('actif', type === 'DEVIS');
 
-    if (regenererNumero) {
-        genererNumeroAutomatique(type);
+    if (type === 'DEVIS') calculerValiditeDevis();
+
+    if (!estChargementDocument) {
+        numeroEstDefinitif = false;
+        previsualiserNumero(type);
     }
 }
 
-function genererNumeroAutomatique(type, tentative) {
+function calculerValiditeDevis() {
+    const dateInput = document.getElementById('dateFacture').value;
+    if (!dateInput) return;
+    const p = dateInput.split('-');
+    const d = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+    d.setMonth(d.getMonth() + 1);
+    const iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    document.getElementById('validiteDevis').value = iso;
+}
+
+// Aperçu du prochain numéro : LECTURE SEULE, ne consomme rien.
+// Le vrai numéro n'est attribué qu'au moment de l'enregistrement (voir enregistrerDocumentFirestore).
+function previsualiserNumero(type, tentative) {
     tentative = tentative || 1;
     const numeroChamp = document.getElementById('numeroFacture');
-    numeroChamp.value = 'Génération du numéro...';
-    (function attendreEtGenerer() {
-        if (!authPret) { setTimeout(attendreEtGenerer, 150); return; }
-        if (!utilisateurActuel) {
-            numeroChamp.value = '';
-            afficherMessageEnregistrer("Numéro non généré : vous n'êtes pas connecté à PRO+.", false);
-            return;
-        }
+    numeroChamp.value = 'Aperçu du numéro...';
+    (function attendre() {
+        if (!authPret) { setTimeout(attendre, 150); return; }
+        if (!utilisateurActuel) { numeroChamp.value = ''; return; }
         const cleCompteur = (type === 'DEVIS') ? 'devis' : 'facture';
-        const prefixe = (type === 'DEVIS') ? 'D-' : 'F-';
-        const annee = new Date().getFullYear();
-        const ref = firebase.firestore().collection('compteurs').doc(cleCompteur);
-        firebase.firestore().runTransaction(function(transaction) {
-            return transaction.get(ref).then(function(doc) {
-                const dernier = (doc.exists && doc.data().dernier) ? doc.data().dernier : 0;
-                const nouveau = dernier + 1;
-                transaction.set(ref, { dernier: nouveau }, { merge: true });
-                return nouveau;
-            });
-        }).then(function(n) {
-            numeroChamp.value = prefixe + annee + '-' + n;
+        firebase.firestore().collection('compteurs').doc(cleCompteur).get().then(function(doc) {
+            const dernier = (doc.exists && doc.data().dernier) ? doc.data().dernier : 0;
+            numeroChamp.value = formatNumero(type, dernier + 1);
         }).catch(function(err) {
-            if (tentative < 4) {
-                // Réessai automatique (souvent un simple souci de synchronisation juste après connexion)
-                setTimeout(function() { genererNumeroAutomatique(type, tentative + 1); }, tentative * 800);
-            } else {
-                numeroChamp.value = '';
-                afficherMessageEnregistrer('Échec de la numérotation automatique après plusieurs tentatives : "' + err.message + '". Tapez le numéro manuellement, ou rechargez la page.', false);
-            }
+            if (tentative < 4) { setTimeout(function() { previsualiserNumero(type, tentative + 1); }, tentative * 800); }
+            else { numeroChamp.value = ''; afficherMessageEnregistrer('Aperçu du numéro indisponible : ' + err.message, false); }
         });
     })();
+}
+
+function formatNumero(type, n) {
+    const prefixe = (type === 'DEVIS') ? 'D-' : 'F-';
+    const maintenant = new Date();
+    const annee = maintenant.getFullYear();
+    const mois = String(maintenant.getMonth() + 1).padStart(2, '0');
+    return prefixe + annee + '-' + mois + '-' + n;
+}
+
+// Attribution DÉFINITIVE du numéro, uniquement appelée au moment d'Enregistrer un document neuf.
+// Incrémente le compteur ET renvoie le numéro dans la même transaction : aucun trou possible.
+function attribuerNumeroDefinitif(type) {
+    const cleCompteur = (type === 'DEVIS') ? 'devis' : 'facture';
+    const ref = firebase.firestore().collection('compteurs').doc(cleCompteur);
+    return firebase.firestore().runTransaction(function(transaction) {
+        return transaction.get(ref).then(function(doc) {
+            const dernier = (doc.exists && doc.data().dernier) ? doc.data().dernier : 0;
+            const nouveau = dernier + 1;
+            transaction.set(ref, { dernier: nouveau }, { merge: true });
+            return nouveau;
+        });
+    }).then(function(n) {
+        return formatNumero(type, n);
+    });
 }
 
 // ===================== AGENDA =====================
@@ -413,78 +472,95 @@ function collecterLignesTable() {
     return lignes;
 }
 
-function enregistrerDocumentFirestore() {
-    if (!authPret) {
-        afficherMessageEnregistrer("Vérification de connexion en cours, patientez une seconde puis réessayez.", false);
-        return;
-    }
-    const user = utilisateurActuel;
-    if (!user) {
-        afficherMessageEnregistrer("Vous n'êtes pas connecté à PRO+, impossible d'enregistrer.", false);
-        return;
-    }
+// Coeur de l'enregistrement, réutilisable (bouton Enregistrer ET bouton Envoyer client).
+// Retourne une Promise résolue avec { type, numero, rattache } une fois l'enregistrement terminé.
+function sauvegarderDocument() {
+    return new Promise(function(resolve, reject) {
+        if (!authPret) { reject(new Error("Vérification de connexion en cours, patientez une seconde puis réessayez.")); return; }
+        if (!utilisateurActuel) { reject(new Error("Vous n'êtes pas connecté à PRO+, impossible d'enregistrer.")); return; }
 
-    const type = document.getElementById('titreDocument').value || 'FACTURE';
-    const numero = document.getElementById('numeroFacture').value || '';
-    const clientTa = document.querySelectorAll('.client-box .auto-ta');
-    const clientInputs = document.querySelectorAll('.client-box input');
-    const nomClient = clientTa[0] ? clientTa[0].value.trim() : '';
-    const adresseClient = clientTa[1] ? clientTa[1].value : '';
-    const telClient = clientInputs[0] ? clientInputs[0].value : '';
-    const emailClient = document.getElementById('emailClient').value;
-    const montantTTC = document.getElementById('ttc').innerText || '0,00';
-    const date = document.getElementById('dateFacture').value || '';
+        const type = document.getElementById('titreDocument').value || 'FACTURE';
+        const clientTa = document.querySelectorAll('.client-box .auto-ta');
+        const clientInputs = document.querySelectorAll('.client-box input');
+        const nomClient = clientTa[0] ? clientTa[0].value.trim() : '';
+        const adresseClient = clientTa[1] ? clientTa[1].value : '';
+        const telClient = clientInputs[0] ? clientInputs[0].value : '';
+        const emailClient = document.getElementById('emailClient').value;
+        const montantTTC = document.getElementById('ttc').innerText || '0,00';
+        const date = document.getElementById('dateFacture').value || '';
 
-    if (!nomClient) {
-        afficherMessageEnregistrer("Renseignez le nom du client avant d'enregistrer.", false);
-        return;
-    }
+        if (!nomClient) { reject(new Error("Renseignez le nom du client avant d'enregistrer.")); return; }
 
-    const rattache = clientCorrespondEnregistre(nomClient);
+        const rattache = clientCorrespondEnregistre(nomClient);
+        const numero = document.getElementById('numeroFacture').value.trim();
 
-    const donnees = {
-        type: type,
-        numero: numero,
-        clientNom: nomClient,
-        clientAdresse: adresseClient,
-        clientTel: telClient,
-        clientEmail: emailClient,
-        montantTTC: montantTTC,
-        date: date,
-        conditionsPaiement: document.getElementById('conditionsPaiement').value,
-        mentionLegale: document.getElementById('mentionLegale').value,
-        lignes: collecterLignesTable()
-    };
+        if (!numero || numero.indexOf('Aperçu') === 0) { reject(new Error("Le numéro n'est pas encore prêt, patientez une seconde puis réessayez.")); return; }
 
-    const col = firebase.firestore().collection('documents');
-    const promesse = docIdCourant
-        ? col.doc(docIdCourant).update(donnees)
-        : col.add(Object.assign({}, donnees, { statut: 'en attente', creeLe: firebase.firestore.FieldValue.serverTimestamp() }))
-            .then(function(ref) { docIdCourant = ref.id; });
+        const donnees = {
+            type: type,
+            numero: numero,
+            clientNom: nomClient,
+            clientAdresse: adresseClient,
+            clientTel: telClient,
+            clientEmail: emailClient,
+            montantTTC: montantTTC,
+            date: date,
+            validiteDevis: type === 'DEVIS' ? (document.getElementById('validiteDevis').value || '') : '',
+            conditionsPaiement: document.getElementById('conditionsPaiement').value,
+            mentionLegale: document.getElementById('mentionLegale').value,
+            lignes: collecterLignesTable()
+        };
 
-    promesse.then(function() {
-        if (rattache) {
-            afficherMessageEnregistrer(type + ' ' + numero + ' enregistrée et rattachée à ' + nomClient + '.', true);
-        } else {
-            afficherMessageEnregistrer('Enregistré, mais "' + nomClient + '" ne correspond à aucun client enregistré sur PRO+ — ce document ne sera pas rattaché à une fiche client.', false);
-        }
-    }).catch(function(err) {
-        afficherMessageEnregistrer("Erreur lors de l'enregistrement : " + err.message, false);
+        const col = firebase.firestore().collection('documents');
+        const promesse = docIdCourant
+            ? col.doc(docIdCourant).update(donnees)
+            : col.add(Object.assign({}, donnees, { statut: 'en attente', creeLe: firebase.firestore.FieldValue.serverTimestamp() }))
+                .then(function(ref) { docIdCourant = ref.id; numeroEstDefinitif = true; });
+
+        promesse.then(function() {
+            resynchroniserCompteurSurNumero(type, numero);
+            resolve({ type: type, numero: numero, rattache: rattache, nomClient: nomClient });
+        }).catch(reject);
     });
 }
 
-function chargerDocumentDepuisFirestore(docId) {
+function enregistrerDocumentFirestore() {
+    sauvegarderDocument().then(function(r) {
+        if (r.rattache) {
+            afficherMessageEnregistrer(r.type + ' ' + r.numero + ' enregistrée et rattachée à ' + r.nomClient + '.', true);
+        } else {
+            afficherMessageEnregistrer('Enregistré, mais "' + r.nomClient + '" ne correspond à aucun client enregistré sur PRO+ — ce document ne sera pas rattaché à une fiche client.', false);
+        }
+    }).catch(function(err) {
+        afficherMessageEnregistrer(err.message, false);
+    });
+}
+
+// Après un enregistrement, le compteur repart du numéro réellement utilisé (même s'il a été tapé à la main),
+// pour que le prochain aperçu automatique continue logiquement à partir de là.
+function resynchroniserCompteurSurNumero(type, numero) {
+    const m = numero.match(/(\d+)\s*$/);
+    if (!m) return;
+    const valeur = parseInt(m[1], 10);
+    if (isNaN(valeur)) return;
+    const cleCompteur = (type === 'DEVIS') ? 'devis' : 'facture';
+    firebase.firestore().collection('compteurs').doc(cleCompteur).set({ dernier: valeur }, { merge: true }).catch(function() {});
+}
+
+function chargerDocumentDepuisFirestore(docId, modeSignature) {
     firebase.firestore().collection('documents').doc(docId).get().then(function(doc) {
         if (!doc.exists) {
             afficherMessageEnregistrer('Ce document est introuvable (peut-être supprimé).', false);
             return;
         }
         docIdCourant = docId;
+        numeroEstDefinitif = true;
         const d = doc.data();
         document.getElementById('titreDocument').value = d.type || 'FACTURE';
-        choisirTypeDocument(d.type || 'FACTURE', false);
+        choisirTypeDocument(d.type || 'FACTURE', true);
         document.getElementById('numeroFacture').value = d.numero || '';
         document.getElementById('dateFacture').value = d.date || '';
+        document.getElementById('validiteDevis').value = d.validiteDevis || '';
         document.getElementById('conditionsPaiement').value = d.conditionsPaiement || document.getElementById('conditionsPaiement').value;
         document.getElementById('mentionLegale').value = d.mentionLegale || document.getElementById('mentionLegale').value;
 
@@ -513,10 +589,95 @@ function chargerDocumentDepuisFirestore(docId) {
         }
         appliquerDate();
         calc();
+
+        if (d.signatureImage) {
+            document.getElementById('signature-affichee').innerHTML = '<img src="' + d.signatureImage + '" style="max-height:100%;max-width:100%;">';
+        }
+
+        if (modeSignature && d.type === 'DEVIS' && !d.signatureImage) {
+            activerModeSignatureClient();
+        } else if (modeSignature && d.signatureImage) {
+            afficherMessageEnregistrer('Ce devis a déjà été signé le ' + (d.signeLe ? new Date(d.signeLe.seconds * 1000).toLocaleDateString('fr-FR') : '') + '.', true);
+        }
     }).catch(function(err) {
         afficherMessageEnregistrer('Erreur de chargement : ' + err.message, false);
     });
 }
+
+// ===================== SIGNATURE CLIENT =====================
+let padSignatureCtx = null;
+let padSignatureEnCours = false;
+
+function activerModeSignatureClient() {
+    document.querySelectorAll('input, textarea, select, .upload-btn').forEach(function(el) { el.disabled = true; });
+    document.querySelector('.btns-fixed').style.display = 'none';
+    document.getElementById('bloc-pad-signature').style.display = 'block';
+
+    const canvas = document.getElementById('pad-signature');
+    padSignatureCtx = canvas.getContext('2d');
+    padSignatureCtx.lineWidth = 2;
+    padSignatureCtx.lineCap = 'round';
+    padSignatureCtx.strokeStyle = '#0F172A';
+
+    function position(e) {
+        const rect = canvas.getBoundingClientRect();
+        const point = e.touches ? e.touches[0] : e;
+        return { x: point.clientX - rect.left, y: point.clientY - rect.top };
+    }
+    function debut(e) {
+        e.preventDefault();
+        padSignatureEnCours = true;
+        const p = position(e);
+        padSignatureCtx.beginPath();
+        padSignatureCtx.moveTo(p.x, p.y);
+    }
+    function trace(e) {
+        if (!padSignatureEnCours) return;
+        e.preventDefault();
+        const p = position(e);
+        padSignatureCtx.lineTo(p.x, p.y);
+        padSignatureCtx.stroke();
+    }
+    function fin() { padSignatureEnCours = false; }
+
+    canvas.addEventListener('mousedown', debut);
+    canvas.addEventListener('mousemove', trace);
+    canvas.addEventListener('mouseup', fin);
+    canvas.addEventListener('mouseleave', fin);
+    canvas.addEventListener('touchstart', debut);
+    canvas.addEventListener('touchmove', trace);
+    canvas.addEventListener('touchend', fin);
+}
+
+function effacerSignaturePad() {
+    const canvas = document.getElementById('pad-signature');
+    padSignatureCtx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function validerSignature() {
+    const canvas = document.getElementById('pad-signature');
+    const imageDataUrl = canvas.toDataURL('image/png');
+
+    // Vérifier que quelque chose a été dessiné (pas juste un canvas vide)
+    const vide = document.createElement('canvas');
+    vide.width = canvas.width; vide.height = canvas.height;
+    if (imageDataUrl === vide.toDataURL('image/png')) {
+        document.getElementById('signature-message').innerHTML = '<span style="color:#DC2626;">Veuillez signer avant de valider.</span>';
+        return;
+    }
+
+    firebase.firestore().collection('documents').doc(docIdCourant).update({
+        signatureImage: imageDataUrl,
+        statut: 'devis accepté',
+        signeLe: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function() {
+        document.getElementById('bloc-pad-signature').innerHTML = '<span style="color:#059669;font-weight:bold;">Merci, votre signature a bien été enregistrée. Ce devis est maintenant accepté.</span>';
+        document.getElementById('signature-affichee').innerHTML = '<img src="' + imageDataUrl + '" style="max-height:100%;max-width:100%;">';
+    }).catch(function(err) {
+        document.getElementById('signature-message').innerHTML = '<span style="color:#DC2626;">Erreur : ' + err.message + '</span>';
+    });
+}
+
 
 calc();
 appliquerDate();
@@ -527,15 +688,16 @@ chargerProfilEntreprise();
 const params = new URLSearchParams(window.location.search);
 
 const docId = params.get('docId');
+const modeSignature = params.get('signature') === '1';
 if (docId) {
     (function attendreAuthPuisCharger() {
-        if (authPret) { chargerDocumentDepuisFirestore(docId); }
+        if (authPret) { chargerDocumentDepuisFirestore(docId, modeSignature); }
         else { setTimeout(attendreAuthPuisCharger, 150); }
     })();
     return;
 }
 
-genererNumeroAutomatique('FACTURE');
+previsualiserNumero('FACTURE');
 
 const data = params.get('data');
 if (!data) return;
@@ -573,6 +735,8 @@ const siret = localStorage.getItem('artisan_siret');
 const sirene = localStorage.getItem('artisan_sirene');
 const tva = localStorage.getItem('artisan_tva');
 const telephone = localStorage.getItem('artisan_telephone');
+const iban = localStorage.getItem('artisan_iban');
+const bic = localStorage.getItem('artisan_bic');
 const logo = localStorage.getItem('artisan_logo');
 
 const nomEl = document.getElementById('nomEntreprise');
@@ -582,6 +746,8 @@ const siretEl = document.getElementById('siretEntreprise');
 const sireneEl = document.getElementById('sireneEntreprise');
 const tvaEl = document.getElementById('tvaEntreprise');
 const telEl = document.getElementById('telEntreprise');
+const ibanEl = document.getElementById('ibanEntreprise');
+const bicEl = document.getElementById('bicEntreprise');
 const logoEl = document.getElementById('logo');
 const logoPh = document.getElementById('logo-placeholder');
 
@@ -592,6 +758,8 @@ if (siret && siretEl) siretEl.value = siret;
 if (sirene && sireneEl) sireneEl.value = sirene;
 if (tva && tvaEl) tvaEl.value = tva;
 if (telephone && telEl) telEl.value = telephone;
+if (iban && ibanEl) ibanEl.value = iban;
+if (bic && bicEl) bicEl.value = bic;
 
 if (logo && logoEl) {
 logoEl.src = logo;
