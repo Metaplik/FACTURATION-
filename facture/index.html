@@ -794,7 +794,6 @@ function validerSignature() {
     }).then(function() {
         document.getElementById('bloc-pad-signature').innerHTML = '<span style="color:#059669;font-weight:bold;">Merci, votre signature a bien été enregistrée. Ce devis est maintenant accepté.</span>';
         document.getElementById('signature-affichee').innerHTML = '<img src="' + imageDataUrl + '" style="max-height:100%;max-width:100%;">';
-        notifierEntrepriseParEmail();
     }).catch(function(err) {
         document.getElementById('signature-message').innerHTML = '<span style="color:#DC2626;">Erreur : ' + err.message + '</span>';
     });
