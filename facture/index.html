@@ -693,6 +693,7 @@ function chargerDocumentDepuisFirestore(docId, modeSignature, modeVoir) {
         if (modeSignature && d.type === 'DEVIS' && !d.signatureImage) {
             activerModeSignatureClient();
         } else if (modeSignature && d.signatureImage) {
+            activerModeConsultationClient();
             afficherMessageEnregistrer('Ce devis a déjà été signé le ' + (d.signeLe ? new Date(d.signeLe.seconds * 1000).toLocaleDateString('fr-FR') : '') + '.', true);
         } else if (modeVoir && !d.accuseReception) {
             activerModeConsultationClient();
