@@ -195,12 +195,27 @@ forfaitaire de 40 € pour frais de recouvrement.</textarea>
 <div class="btns-fixed">
 <button onclick="envoyerEntreprise()">Envoyer entreprise</button>
 <button class="btn-pdf" onclick="imprimerNatif()">⬇ PDF</button>
-<button onclick="envoyerClient()">Envoyer client</button>
+<button onclick="ouvrirChoixEnvoi()">Envoyer client</button>
 
 <button class="btn-agenda" onclick="ajouterFactureAgenda()">Agenda</button>
 <button class="btn-enregistrer" id="btn-enregistrer" onclick="enregistrerDocumentFirestore()" disabled>Connexion...</button>
 </div>
 <div id="enregistrer-message" style="position:fixed;bottom:60px;left:10px;right:10px;background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;padding:10px 14px;border-radius:8px;font-size:13px;display:none;z-index:100;"></div>
+
+<div id="overlay-choix-envoi" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:12px;padding:24px;width:280px;text-align:center;">
+        <div style="font-weight:bold;font-size:15px;margin-bottom:18px;">Envoyer au client par :</div>
+        <div style="display:flex;gap:14px;justify-content:center;">
+            <button onclick="envoyerClientSMS()" style="flex:1;background:#F1F5F9;border:none;border-radius:10px;padding:18px 8px;cursor:pointer;font-size:13px;">
+                <div style="font-size:30px;">📱</div>SMS
+            </button>
+            <button onclick="envoyerClientEmail()" style="flex:1;background:#F1F5F9;border:none;border-radius:10px;padding:18px 8px;cursor:pointer;font-size:13px;">
+                <div style="font-size:30px;">✉️</div>Email
+            </button>
+        </div>
+        <button onclick="document.getElementById('overlay-choix-envoi').style.display='none'" style="margin-top:16px;background:none;border:none;color:#64748B;font-size:13px;cursor:pointer;">Annuler</button>
+    </div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
@@ -322,30 +337,58 @@ const corps = encodeURIComponent("Bonjour,\n\nLe document vient d'être émis. M
 window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corps;
 }
 
-function envoyerClient() {
-const email = document.getElementById('emailClient').value.trim();
-if (!email) { alert("Veuillez renseigner l'email du client."); return; }
+function ouvrirChoixEnvoi() {
+    const email = document.getElementById('emailClient').value.trim();
+    const clientInputs = document.querySelectorAll('.client-box input');
+    const tel = clientInputs[0] ? clientInputs[0].value.trim() : '';
+    if (!email && !tel) { alert("Renseignez au moins l'email ou le téléphone du client."); return; }
+    document.getElementById('overlay-choix-envoi').style.display = 'flex';
+}
 
-sauvegarderDocument().then(function(r) {
-    const sujet = encodeURIComponent(r.type + ' ' + r.numero);
-    const emailEntreprise = document.getElementById('emailEntreprise').value.trim();
-    let corps;
-    let bcc = '';
+function construireLienEtCorps(r) {
+    let lien = '';
+    let texte = '';
     if (r.type === 'DEVIS' && docIdCourant) {
-        const lien = 'https://metaplik.github.io/FACTURATION-/facture/?docId=' + docIdCourant + '&signature=1';
-        corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver votre devis via ce lien. Vous pouvez le consulter et le signer directement en ligne :\n" + lien + "\n\nCordialement.");
+        lien = 'https://metaplik.github.io/FACTURATION-/facture/?docId=' + docIdCourant + '&signature=1';
+        texte = "Bonjour,\n\nVeuillez trouver votre devis via ce lien. Vous pouvez le consulter et le signer directement en ligne :\n" + lien + "\n\nCordialement.";
     } else if (docIdCourant) {
-        const lien = 'https://metaplik.github.io/FACTURATION-/facture/?docId=' + docIdCourant + '&voir=1';
-        corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver votre facture via ce lien. Vous pouvez la consulter et la télécharger directement en ligne :\n" + lien + "\n\nCordialement.");
-        // Copie automatique vers vous dès l'envoi, pas besoin que le client fasse quoi que ce soit
-        if (emailEntreprise) bcc = '&bcc=' + encodeURIComponent(emailEntreprise);
+        lien = 'https://metaplik.github.io/FACTURATION-/facture/?docId=' + docIdCourant + '&voir=1';
+        texte = "Bonjour,\n\nVeuillez trouver votre facture via ce lien. Vous pouvez la consulter et la télécharger directement en ligne :\n" + lien + "\n\nCordialement.";
     } else {
-        corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver ci-joint votre document.\n\nCordialement.");
+        texte = "Bonjour,\n\nVeuillez trouver ci-joint votre document.\n\nCordialement.";
     }
-    window.location.href = 'mailto:' + email + '?subject=' + sujet + bcc + '&body=' + corps;
-}).catch(function(err) {
-    afficherMessageEnregistrer(err.message, false);
-});
+    return texte;
+}
+
+function envoyerClientEmail() {
+    document.getElementById('overlay-choix-envoi').style.display = 'none';
+    const email = document.getElementById('emailClient').value.trim();
+    if (!email) { alert("Aucun email renseigné pour ce client."); return; }
+
+    sauvegarderDocument().then(function(r) {
+        const sujet = encodeURIComponent(r.type + ' ' + r.numero);
+        const emailEntreprise = document.getElementById('emailEntreprise').value.trim();
+        const corps = construireLienEtCorps(r);
+        let bcc = '';
+        if (r.type === 'FACTURE' && docIdCourant && emailEntreprise) bcc = '&bcc=' + encodeURIComponent(emailEntreprise);
+        window.location.href = 'mailto:' + email + '?subject=' + sujet + bcc + '&body=' + encodeURIComponent(corps);
+    }).catch(function(err) {
+        afficherMessageEnregistrer(err.message, false);
+    });
+}
+
+function envoyerClientSMS() {
+    document.getElementById('overlay-choix-envoi').style.display = 'none';
+    const clientInputs = document.querySelectorAll('.client-box input');
+    const tel = clientInputs[0] ? clientInputs[0].value.replace(/\s/g, '') : '';
+    if (!tel) { alert("Aucun numéro de téléphone renseigné pour ce client."); return; }
+
+    sauvegarderDocument().then(function(r) {
+        const corps = construireLienEtCorps(r);
+        window.location.href = 'sms:' + tel + '?body=' + encodeURIComponent(corps);
+    }).catch(function(err) {
+        afficherMessageEnregistrer(err.message, false);
+    });
 }
 
 // ===================== BASCULE FACTURE / DEVIS =====================
@@ -357,10 +400,12 @@ function choisirTypeDocument(type, estChargementDocument) {
     const btnFacture = document.getElementById('btn-type-facture');
     const btnDevis = document.getElementById('btn-type-devis');
     const blocValidite = document.getElementById('bloc-validite-devis');
+    const blocSignature = document.getElementById('bloc-signature');
 
     titre.value = type;
     label.value = (type === 'DEVIS') ? 'Devis :' : 'Facturation :';
     blocValidite.style.display = (type === 'DEVIS') ? 'block' : 'none';
+    blocSignature.style.display = (type === 'DEVIS') ? 'block' : 'none';
 
     btnFacture.classList.toggle('actif', type === 'FACTURE');
     btnDevis.classList.toggle('actif', type === 'DEVIS');
@@ -511,6 +556,9 @@ function sauvegarderDocument() {
             clientTel: telClient,
             clientEmail: emailClient,
             entrepriseEmail: document.getElementById('emailEntreprise').value.trim(),
+            entrepriseNom: document.getElementById('nomEntreprise').value,
+            entrepriseAdresse: document.getElementById('adresseEntreprise').value,
+            entrepriseLogo: localStorage.getItem('artisan_logo') || '',
             montantTTC: montantTTC,
             date: date,
             validiteDevis: type === 'DEVIS' ? (document.getElementById('validiteDevis').value || '') : '',
@@ -571,6 +619,16 @@ function chargerDocumentDepuisFirestore(docId, modeSignature, modeVoir) {
         entrepriseEmailPourNotif = d.entrepriseEmail || '';
         numeroPourNotif = d.numero || '';
         typePourNotif = d.type || '';
+
+        if (d.entrepriseLogo) {
+            const logoEl = document.getElementById('logo');
+            const logoPh = document.getElementById('logo-placeholder');
+            logoEl.src = d.entrepriseLogo;
+            logoEl.style.display = 'block';
+            if (logoPh) logoPh.style.display = 'none';
+        }
+        if (d.entrepriseNom) { const el = document.getElementById('nomEntreprise'); el.value = d.entrepriseNom; grow(el); }
+        if (d.entrepriseAdresse) { const el = document.getElementById('adresseEntreprise'); el.value = d.entrepriseAdresse; grow(el); }
         document.getElementById('titreDocument').value = d.type || 'FACTURE';
         choisirTypeDocument(d.type || 'FACTURE', true);
         document.getElementById('numeroFacture').value = d.numero || '';
