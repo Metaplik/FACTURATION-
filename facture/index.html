@@ -386,6 +386,16 @@ function envoyerClientSMS() {
     sauvegarderDocument().then(function(r) {
         const corps = construireLienEtCorps(r);
         window.location.href = 'sms:' + tel + '?body=' + encodeURIComponent(corps);
+        // Le SMS ne permet pas de copie cachée : on envoie un mail séparé vers vous, avec un léger délai.
+        if (r.type === 'FACTURE') {
+            const emailEntreprise = document.getElementById('emailEntreprise').value.trim();
+            if (emailEntreprise) {
+                const sujet = encodeURIComponent(r.type + ' ' + r.numero + ' (copie — envoyée par SMS au client)');
+                setTimeout(function() {
+                    window.location.href = 'mailto:' + emailEntreprise + '?subject=' + sujet + '&body=' + encodeURIComponent(corps);
+                }, 1500);
+            }
+        }
     }).catch(function(err) {
         afficherMessageEnregistrer(err.message, false);
     });
@@ -559,6 +569,12 @@ function sauvegarderDocument() {
             entrepriseNom: document.getElementById('nomEntreprise').value,
             entrepriseAdresse: document.getElementById('adresseEntreprise').value,
             entrepriseLogo: localStorage.getItem('artisan_logo') || '',
+            entrepriseSiret: document.getElementById('siretEntreprise').value,
+            entrepriseSirene: document.getElementById('sireneEntreprise').value,
+            entrepriseTva: document.getElementById('tvaEntreprise').value,
+            entrepriseTelephone: document.getElementById('telEntreprise').value,
+            entrepriseIban: document.getElementById('ibanEntreprise').value,
+            entrepriseBic: document.getElementById('bicEntreprise').value,
             montantTTC: montantTTC,
             date: date,
             validiteDevis: type === 'DEVIS' ? (document.getElementById('validiteDevis').value || '') : '',
@@ -629,6 +645,13 @@ function chargerDocumentDepuisFirestore(docId, modeSignature, modeVoir) {
         }
         if (d.entrepriseNom) { const el = document.getElementById('nomEntreprise'); el.value = d.entrepriseNom; grow(el); }
         if (d.entrepriseAdresse) { const el = document.getElementById('adresseEntreprise'); el.value = d.entrepriseAdresse; grow(el); }
+        if (d.entrepriseSiret) document.getElementById('siretEntreprise').value = d.entrepriseSiret;
+        if (d.entrepriseSirene) document.getElementById('sireneEntreprise').value = d.entrepriseSirene;
+        if (d.entrepriseTva) document.getElementById('tvaEntreprise').value = d.entrepriseTva;
+        if (d.entrepriseTelephone) document.getElementById('telEntreprise').value = d.entrepriseTelephone;
+        if (d.entrepriseEmail) document.getElementById('emailEntreprise').value = d.entrepriseEmail;
+        if (d.entrepriseIban) document.getElementById('ibanEntreprise').value = d.entrepriseIban;
+        if (d.entrepriseBic) document.getElementById('bicEntreprise').value = d.entrepriseBic;
         document.getElementById('titreDocument').value = d.type || 'FACTURE';
         choisirTypeDocument(d.type || 'FACTURE', true);
         document.getElementById('numeroFacture').value = d.numero || '';
