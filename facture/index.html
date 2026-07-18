@@ -328,14 +328,21 @@ if (!email) { alert("Veuillez renseigner l'email du client."); return; }
 
 sauvegarderDocument().then(function(r) {
     const sujet = encodeURIComponent(r.type + ' ' + r.numero);
+    const emailEntreprise = document.getElementById('emailEntreprise').value.trim();
     let corps;
+    let bcc = '';
     if (r.type === 'DEVIS' && docIdCourant) {
         const lien = 'https://metaplik.github.io/FACTURATION-/facture/?docId=' + docIdCourant + '&signature=1';
         corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver votre devis via ce lien. Vous pouvez le consulter et le signer directement en ligne :\n" + lien + "\n\nCordialement.");
+    } else if (docIdCourant) {
+        const lien = 'https://metaplik.github.io/FACTURATION-/facture/?docId=' + docIdCourant + '&voir=1';
+        corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver votre facture via ce lien. Vous pouvez la consulter et la télécharger directement en ligne :\n" + lien + "\n\nCordialement.");
+        // Copie automatique vers vous dès l'envoi, pas besoin que le client fasse quoi que ce soit
+        if (emailEntreprise) bcc = '&bcc=' + encodeURIComponent(emailEntreprise);
     } else {
         corps = encodeURIComponent("Bonjour,\n\nVeuillez trouver ci-joint votre document.\n\nCordialement.");
     }
-    window.location.href = 'mailto:' + email + '?subject=' + sujet + '&body=' + corps;
+    window.location.href = 'mailto:' + email + '?subject=' + sujet + bcc + '&body=' + corps;
 }).catch(function(err) {
     afficherMessageEnregistrer(err.message, false);
 });
@@ -503,6 +510,7 @@ function sauvegarderDocument() {
             clientAdresse: adresseClient,
             clientTel: telClient,
             clientEmail: emailClient,
+            entrepriseEmail: document.getElementById('emailEntreprise').value.trim(),
             montantTTC: montantTTC,
             date: date,
             validiteDevis: type === 'DEVIS' ? (document.getElementById('validiteDevis').value || '') : '',
@@ -547,7 +555,11 @@ function resynchroniserCompteurSurNumero(type, numero) {
     firebase.firestore().collection('compteurs').doc(cleCompteur).set({ dernier: valeur }, { merge: true }).catch(function() {});
 }
 
-function chargerDocumentDepuisFirestore(docId, modeSignature) {
+let entrepriseEmailPourNotif = '';
+let numeroPourNotif = '';
+let typePourNotif = '';
+
+function chargerDocumentDepuisFirestore(docId, modeSignature, modeVoir) {
     firebase.firestore().collection('documents').doc(docId).get().then(function(doc) {
         if (!doc.exists) {
             afficherMessageEnregistrer('Ce document est introuvable (peut-être supprimé).', false);
@@ -556,6 +568,9 @@ function chargerDocumentDepuisFirestore(docId, modeSignature) {
         docIdCourant = docId;
         numeroEstDefinitif = true;
         const d = doc.data();
+        entrepriseEmailPourNotif = d.entrepriseEmail || '';
+        numeroPourNotif = d.numero || '';
+        typePourNotif = d.type || '';
         document.getElementById('titreDocument').value = d.type || 'FACTURE';
         choisirTypeDocument(d.type || 'FACTURE', true);
         document.getElementById('numeroFacture').value = d.numero || '';
@@ -598,10 +613,35 @@ function chargerDocumentDepuisFirestore(docId, modeSignature) {
             activerModeSignatureClient();
         } else if (modeSignature && d.signatureImage) {
             afficherMessageEnregistrer('Ce devis a déjà été signé le ' + (d.signeLe ? new Date(d.signeLe.seconds * 1000).toLocaleDateString('fr-FR') : '') + '.', true);
+        } else if (modeVoir && !d.accuseReception) {
+            activerModeConsultationClient();
+        } else if (modeVoir && d.accuseReception) {
+            afficherMessageEnregistrer('Réception déjà confirmée le ' + (d.receptionLe ? new Date(d.receptionLe.seconds * 1000).toLocaleDateString('fr-FR') : '') + '.', true);
         }
     }).catch(function(err) {
         afficherMessageEnregistrer('Erreur de chargement : ' + err.message, false);
     });
+}
+
+function activerModeConsultationClient() {
+    document.querySelectorAll('input, textarea, select, .upload-btn').forEach(function(el) { el.disabled = true; });
+    document.querySelector('.btns-fixed').style.display = 'none';
+
+    const btnTelecharger = document.createElement('button');
+    btnTelecharger.innerText = 'Télécharger';
+    btnTelecharger.onclick = function() { window.print(); };
+    btnTelecharger.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1a6dc4;color:white;border:none;padding:14px 30px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;z-index:200;';
+    document.body.appendChild(btnTelecharger);
+}
+
+function notifierEntrepriseParEmail() {
+    if (!entrepriseEmailPourNotif) return;
+    const lien = window.location.origin + window.location.pathname + '?docId=' + docIdCourant;
+    const sujet = encodeURIComponent(typePourNotif + ' reçue : ' + numeroPourNotif);
+    const corps = encodeURIComponent("Bonjour,\n\nLe " + typePourNotif.toLowerCase() + " " + numeroPourNotif + " a bien été reçu par le client.\nVous pouvez le consulter ici :\n" + lien + "\n\nCordialement.");
+    setTimeout(function() {
+        window.location.href = 'mailto:' + entrepriseEmailPourNotif + '?subject=' + sujet + '&body=' + corps;
+    }, 1200);
 }
 
 // ===================== SIGNATURE CLIENT =====================
@@ -673,6 +713,7 @@ function validerSignature() {
     }).then(function() {
         document.getElementById('bloc-pad-signature').innerHTML = '<span style="color:#059669;font-weight:bold;">Merci, votre signature a bien été enregistrée. Ce devis est maintenant accepté.</span>';
         document.getElementById('signature-affichee').innerHTML = '<img src="' + imageDataUrl + '" style="max-height:100%;max-width:100%;">';
+        notifierEntrepriseParEmail();
     }).catch(function(err) {
         document.getElementById('signature-message').innerHTML = '<span style="color:#DC2626;">Erreur : ' + err.message + '</span>';
     });
@@ -689,9 +730,10 @@ const params = new URLSearchParams(window.location.search);
 
 const docId = params.get('docId');
 const modeSignature = params.get('signature') === '1';
+const modeVoir = params.get('voir') === '1';
 if (docId) {
     (function attendreAuthPuisCharger() {
-        if (authPret) { chargerDocumentDepuisFirestore(docId, modeSignature); }
+        if (authPret) { chargerDocumentDepuisFirestore(docId, modeSignature, modeVoir); }
         else { setTimeout(attendreAuthPuisCharger, 150); }
     })();
     return;
